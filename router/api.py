@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends
-from database import ph_records, get_db, generate_uuid
+from database import ph_records, get_db, generate_uuid, ph_phones
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 from random import randint
 import hashlib
 import json
-from schemas import Record, Accept, Preference, startPage, Page1, CommonRes, Page2, Page3, Page4,userMsg
+from schemas import Record, Accept, Preference, startPage, Page1, CommonRes, Page2, Page3, Page4, userMsg
 
 api = APIRouter(
     prefix="/api",
@@ -25,6 +24,13 @@ def recommendPhone():
 @api.get('/')
 async def index():
     return recommendPhone()
+
+
+@api.get('/phone')
+async def phone(id: int, db: Session = Depends(get_db)):
+    print(id)
+    phone = db.query(ph_phones).filter(ph_phones.id == id).first()
+    return phone
 
 
 # 接受知情同意书，返回接受按钮
