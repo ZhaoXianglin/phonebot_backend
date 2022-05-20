@@ -109,41 +109,46 @@ class Page3(Record):
     accuracy1: int
     accuracy2: int
     accuracy3: int
-    control1: int
-    control2: int
-    control3: int
-    cui_adapt1: int
-    cui_adapt2: int
-    cui_attentive1: int
+
+    explain1: int
+    explain2: int
+    explain3: int
+
     cui_attentive2: int
-    cui_attentive3: int
-    cui_attentive4: int
     cui_attentive5: int
-    cui_coord1: int
-    cui_coord2: int
-    cui_coord3: int
-    cui_coord4: int
-    cui_engage1: int
-    cui_engage2: int
-    cui_human1: int
-    cui_human2: int
-    cui_human3: int
-    cui_ia_exp: int
-    cui_ia_expertise: int
-    cui_ia_unders: int
+    cui_attentive6: int
+
+    cui_unders1: int
+    cui_unders2: int
+    cui_unders3: int
+
+    cui_response: int
+    cui_resQuali1: int
+    cui_resQuali3: int
     cui_interPace: int
+
+    social_presence1: int
+    social_presence2: int
+    social_presence3: int
+    social_presence4: int
+
+    trans1: int
+    trans2: int
+    trans3: int
+
+    control1: int
+    control4: int
+    control5: int
+
     cui_positive1: int
     cui_positive2: int
     cui_positive3: int
-    cui_positive4: int
     cui_rapport1: int
     cui_rapport2: int
-    cui_rapport3: int
-    cui_response: int
-    cui_resQuali1: int
-    cui_resQuali2: int
-    cui_resQuali3: int
-    cui_unders: int
+
+    cui_human1: int
+    cui_human2: int
+    cui_human3: int
 
     @validator("page3T", pre=True)
     def dt_validate(cls, page3T):
@@ -151,41 +156,35 @@ class Page3(Record):
 
 
 class Page4(Record):
-    ease1: int
-    ease2: int
-    ease3: int
-    explain1: int
-    explain2: int
-    explain3: int
-    ia1: int
-    ia2: int
-    ia3: int
-    intent1: int
-    intent2: int
-    intent3: int
-    intent4: int
-    intent2purchase1: int
-    intent2purchase2: int
-    intent2purchase3: int
-    novel1: int
-    novel2: int
-    satis1: int
-    satis2: int
-    satis3: int
-    satis4: int
-    seren1: int
-    seren2: int
-    seren3: int
-    trans1: int
-    trans2: int
-    trans3: int
-    trust1: int
-    trust3: int
-    trust4: int
-    trust5: int
     useful1: int
     useful2: int
     useful3: int
+
+    ease1: int
+    ease4: int
+    ease5: int
+
+    trust1: int
+    trust2: int
+    trust3: int
+    trust4: int
+
+    confidence1: int
+    confidence2: int
+    confidence4: int
+
+    satis1: int
+    satis2: int
+    satis3: int
+
+    intent1: int
+    intent2: int
+    intent3: int
+
+    intent2purchase1: int
+    intent2purchase2: int
+    intent2purchase3: int
+
     page4T: datetime
 
     @validator("page4T", pre=True)

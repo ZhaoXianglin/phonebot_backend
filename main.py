@@ -16,6 +16,8 @@ app.include_router(api.api)
 
 @app.get("/")
 async def index():
+    import numpy as np
+    print(np.arange(3, 35, 3))
     return {"message": "Hello World!"}
 
 

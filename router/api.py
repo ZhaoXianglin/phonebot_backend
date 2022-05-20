@@ -5,6 +5,7 @@ from random import randint
 import hashlib
 import json
 from schemas import Record, Accept, Preference, startPage, Page1, CommonRes, Page2, Page3, Page4, userMsg
+from utils.tools import detect_intent_texts
 
 api = APIRouter(
     prefix="/api",
@@ -17,13 +18,14 @@ def recommendPhone():
     with open('newPhone.json', 'r') as f:
         phones = json.load(f)
         phone_num = len(phones['pool'])
-        item = randint(0, phone_num)
+        item = randint(0, phone_num-1)
         return phones['pool'][item]
 
 
 @api.get('/')
 async def index():
-    return recommendPhone()
+    intent, res_text = detect_intent_texts("mobilephone-xlojne", '123456789', "hello", 'zh-CN')
+    print(intent, '---')
 
 
 @api.get('/phone')
@@ -86,7 +88,6 @@ def prefer(page: Preference, db: Session = Depends(get_db)):
         db.commit()
         db.flush()
         resphone = recommendPhone()
-
         return {'status': 1, 'msg': 'success', 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
@@ -98,7 +99,8 @@ def usermsgres(page: userMsg, db: Session = Depends(get_db)):
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         resphone = recommendPhone()
-        return {'status': 1, 'msg': 'success', 'phone': resphone}
+        intent, res_text = detect_intent_texts("mobilephone-xlojne", page.uuid, page.message, 'en')
+        return {'status': 1, 'msg': res_text, 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
@@ -144,8 +146,8 @@ def page4(page: Page4, db: Session = Depends(get_db)):
         db.commit()
         db.flush()
         md5 = hashlib.md5()
-        md5.update("jyc" + page.uuid)
+        md5.update(("jyc" + page.uuid).encode("utf-8"))
         code = md5.hexdigest()
-        return CommonRes(status=1, msg={'msg': 'success', 'code': code})
+        return CommonRes(status=1, msg= code)
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement or try again later.')
