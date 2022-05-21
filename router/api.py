@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends
-from database import ph_records, get_db, generate_uuid, ph_phones
+from database import ph_records, get_db, get_session, generate_uuid, ph_phones
 from sqlalchemy.orm import Session
 from random import randint
 import hashlib
 import json
-from schemas import Record, Accept, Preference, startPage, Page1, CommonRes, Page2, Page3, Page4, userMsg
+from schemas import Record, Accept, Preference, startPage, Page1, CommonRes, Page2, Page3, Page4, userMsg, UserProfile
 from utils.tools import detect_intent_texts
+from utils.recommend import InitializeUserModel, UpdateUserModel, GetRec, GetSysCri
 
 api = APIRouter(
     prefix="/api",
@@ -14,12 +15,11 @@ api = APIRouter(
 )
 
 
-def recommendPhone():
-    with open('newPhone.json', 'r') as f:
-        phones = json.load(f)
-        phone_num = len(phones['pool'])
-        item = randint(0, phone_num-1)
-        return phones['pool'][item]
+def recommendPhone(pid: int):
+    db = get_session()
+    phone = db.query(ph_phones).filter(ph_phones.id == pid).first()
+    db.close()
+    return phone
 
 
 @api.get('/')
@@ -87,8 +87,23 @@ def prefer(page: Preference, db: Session = Depends(get_db)):
             setattr(user, k, v)
         db.commit()
         db.flush()
-        resphone = recommendPhone()
-        return {'status': 1, 'msg': 'success', 'phone': resphone}
+        user_profile = InitializeUserModel(page.user_profile.json())
+        user_profile.topRecommendedItem = user_profile['pool'][0]
+        resphone = recommendPhone(user_profile['pool'][0])
+        return {'status': 1, 'msg': 'success', 'phone': resphone, 'user_profile': user_profile}
+    else:
+        return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
+
+
+# 更新用户偏好
+@api.post("/upmodel")
+def upmodel(page: UserProfile, db: Session = Depends(get_db)):
+    user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
+    if user:
+        user_profile = UpdateUserModel(page.json())
+        user_profile.topRecommendedItem = user_profile['pool'][0]
+        resphone = recommendPhone(user_profile['pool'][0])
+        return {'status': 1, 'msg': 'success', 'phone': resphone, 'user_profile': user_profile}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
@@ -148,6 +163,6 @@ def page4(page: Page4, db: Session = Depends(get_db)):
         md5 = hashlib.md5()
         md5.update(("jyc" + page.uuid).encode("utf-8"))
         code = md5.hexdigest()
-        return CommonRes(status=1, msg= code)
+        return CommonRes(status=1, msg=code)
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement or try again later.')

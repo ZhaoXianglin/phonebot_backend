@@ -38,6 +38,21 @@ class Record(BaseModel):
 #     weight: int
 #     year: str
 
+class UserModel(BaseModel):
+    preferenceData: dict
+    _id: str
+    user_preference_model: dict
+    user_critique_preference: list
+    user_constraints: list
+
+
+class UserProfile(BaseModel):
+    user: UserModel
+    topRecommendedItem: int
+    logger: dict
+    pool: list
+    new_pool: list
+
 
 class Accept(BaseModel):
     device: str
@@ -85,6 +100,7 @@ class Preference(Record):
     brands: str
     budget: int
     cameras: str
+    user_profile: UserProfile
     preferT: datetime
 
     @validator("preferT", pre=True)
