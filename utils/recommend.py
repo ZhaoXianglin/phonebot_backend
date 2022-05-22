@@ -30,8 +30,7 @@ def InitializeUserModel(json_data):
     start = time.process_time()
     time_helper.print_current_time()
     print("Initialize User Model ---- start")
-    user_profile = json.loads(json_data)
-    print(user_profile)
+    user_profile = json_data
     user_preference_data = user_profile['user'][
         'preferenceData']  # initial preference data: a list of ids of phones that user preferred
 
@@ -89,27 +88,27 @@ def UpdateUserModel(json_data):
     start = time.process_time()
     time_helper.print_current_time()
     print("Update User Model ---- start")
-
-    user_profile = json.loads(json_data)
+    user_profile = json_data
+    # 用户操作记录
     user_interaction_dialog = user_profile['logger']['latest_dialog']
-    user_browsed_items = user_profile['logger']['browsedItems']
+    # 用户模型
     user_model = user_profile['user']
+    # 当前推荐的项目
     current_recommended_item = user_profile['topRecommendedItem']
-    key = 'id'
     # update the user model (three parts)
     updated_user_preference_model, updated_user_constraints, updated_user_critique_preference = user_modeling.update_user_model(
         user_model,
-        user_interaction_dialog, user_browsed_items, current_recommended_item, categorical_attributes,
-        numerical_attributes, key, item_info_dict)
+        user_interaction_dialog, current_recommended_item, categorical_attributes,
+        numerical_attributes, item_info_dict)
     user_profile['user']['user_preference_model'] = updated_user_preference_model
     user_profile['user']['user_constraints'] = updated_user_constraints
     user_profile['user']['user_critique_preference'] = updated_user_critique_preference
 
     # update the user interaction log
-    # for log in user_interaction_dialog:
-    #     user_profile['logger']['dialog'].append(copy.deepcopy(log))
+    for log in user_interaction_dialog:
+        user_profile['logger']['dialog'].append(copy.deepcopy(log))
 
-    # user_profile['logger']['latest_dialog'] = []
+    user_profile['logger']['latest_dialog'] = []
 
     end = time.process_time()
     time_helper.print_current_time()
@@ -142,15 +141,6 @@ def GetRec(json_data):
         new_item_pool.append(item_info_dict[item])
         new_pool_item_info_dict[item] = item_info_dict[item]
 
-    # Filter the items that the user has browsed
-    # user_interaction_log = user_profile['logger']
-    # user_browsed_items = user_interaction_log['browsedItems']
-    # for item_key in user_browsed_items:
-    #     item_info = item_info_dict[item_key]
-    #     item_pool.remove(item_info)
-    # time_helper.print_current_time()
-    # print("Filter Phone Data ---- Filter %d items that the user has browsed, %d items left. -- Done!" % (len(user_browsed_items), len(item_pool)))
-
     top_K = 20
     method = 'MAUT_COMPAT'  # (1) MAUT (2) COMPAT (3) MAUT_COMPAT
     alpha = 0.5  # Linear combination weight: alpha-> weight for MAUT score; 1-alpha -> weight for COMPAT score
@@ -163,13 +153,13 @@ def GetRec(json_data):
     if len(new_item_pool) > 0:
         topK_recommendations_score_dict = recommendation.compute_recommendation(user_preference_model,
                                                                                 user_critique_preference,
-                                                                                new_item_pool, top_K, \
+                                                                                new_item_pool, top_K,
                                                                                 categorical_attributes,
                                                                                 numerical_attributes, method, key,
                                                                                 alpha)
     else:
         filtered_item_pool = recommendation.filter_items_by_user_constraints(user_constraints, item_pool,
-                                                                             minimal_threshold, \
+                                                                             minimal_threshold,
                                                                              categorical_attributes,
                                                                              numerical_attributes, key)
 
@@ -179,7 +169,7 @@ def GetRec(json_data):
         if len(filtered_item_pool) > 0:
             topK_recommendations_score_dict = recommendation.compute_recommendation(user_preference_model,
                                                                                     user_critique_preference,
-                                                                                    filtered_item_pool, top_K, \
+                                                                                    filtered_item_pool, top_K,
                                                                                     categorical_attributes,
                                                                                     numerical_attributes, method,
                                                                                     key, alpha)
@@ -190,8 +180,6 @@ def GetRec(json_data):
             topK_recommendation_list.append(rec[0])
     time_helper.print_current_time()
     print("Get Recommendation ---- Obtained top %d recommended items. " % len(topK_recommendation_list))
-
-    updated_item_pool = []
 
     if len(new_item_pool) > 0:
         time_helper.print_current_time()
@@ -264,15 +252,6 @@ def GetSysCri(json_data):
 
     time_helper.print_current_time()
     print("Get System Critiques ---- Item Pool: %d songs" % len(item_pool_for_SC))
-
-    # whether or not to filter recommendation using hard constraints
-    # minimal_threshold = 150
-    # filtered_item_pool = recommendation.filter_items_by_user_constraints(user_constraints, item_pool, minimal_threshold,\
-    #     categorical_attributes, numerical_attributes, key)
-    # time_helper.print_current_time()
-    # print("Filter By User Constraints --- after filtering, %d phones left." % len(filtered_item_pool))
-
-    # filtered_item_pool = item_pool
     method = 'MAUT_COMPAT'
     alpha = 0.5
     top_k_candidates = 150

@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from database import ph_records, get_db, get_session, generate_uuid, ph_phones
 from sqlalchemy.orm import Session
 from random import randint
 import hashlib
 import json
-from schemas import Record, Accept, Preference, startPage, Page1, CommonRes, Page2, Page3, Page4, userMsg, UserProfile
+from schemas import Record, Accept, Preference, startPage, Page1, CommonRes, Page2, Page3, Page4, userMsg, LoggerModel
 from utils.tools import detect_intent_texts
 from utils.recommend import InitializeUserModel, UpdateUserModel, GetRec, GetSysCri
+from utils.function.user_model_default import user_model
 
 api = APIRouter(
     prefix="/api",
@@ -79,7 +80,7 @@ def page1(page: Page1, db: Session = Depends(get_db)):
 
 # 初始化用户偏好
 @api.post("/prefer")
-def prefer(page: Preference, db: Session = Depends(get_db)):
+async def prefer(request: Request, page: Preference, db: Session = Depends(get_db)):
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         update_info = page.dict(exclude_unset=True)
@@ -87,33 +88,51 @@ def prefer(page: Preference, db: Session = Depends(get_db)):
             setattr(user, k, v)
         db.commit()
         db.flush()
-        user_profile = InitializeUserModel(page.user_profile.json())
-        user_profile.topRecommendedItem = user_profile['pool'][0]
-        resphone = recommendPhone(user_profile['pool'][0])
-        return {'status': 1, 'msg': 'success', 'phone': resphone, 'user_profile': user_profile}
+        # 更新记录后包装用户模型
+        u_model = user_model.copy()
+        # 更新品牌/价格/摄像头像素数
+        u_model["user"]["preferenceData"]["brand"] = page.brands.split(",")
+        u_model["user"]["preferenceData"]["price"] = [0, page.budget]
+        u_model["user"]["preferenceData"]["camera"] = [0, int(page.cameras)]
+
+        # 更新计算后的用户模型
+        u_model = InitializeUserModel(u_model)
+        u_model['topRecommendedItem'] = u_model['pool'][0]
+        # 将模型redis持久化
+        await request.app.state.redis.set(page.uuid, json.dumps(u_model))
+        # 获取给用户返回的手机
+        resphone = recommendPhone(u_model['pool'][0])
+        return {'status': 1, 'msg': 'success', 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
 
 # 更新用户偏好
-@api.post("/upmodel")
-def upmodel(page: UserProfile, db: Session = Depends(get_db)):
+@api.post("/updatemodel")
+async def updatemodel(request: Request, page: LoggerModel, db: Session = Depends(get_db)):
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
-        user_profile = UpdateUserModel(page.json())
-        user_profile.topRecommendedItem = user_profile['pool'][0]
-        resphone = recommendPhone(user_profile['pool'][0])
-        return {'status': 1, 'msg': 'success', 'phone': resphone, 'user_profile': user_profile}
+        u_model = await request.app.state.redis.get(page.uuid)
+        print(u_model)
+        u_model = json.loads(u_model)
+        u_model['logger']['latest_dialog'] = page.logger
+        u_model = UpdateUserModel(u_model)
+        u_model['topRecommendedItem'] = u_model['pool'][0]
+        # 清空最新的操作记录
+        u_model['logger']['latest_dialog'] = []
+        # 将模型redis持久化
+        await request.app.state.redis.set(page.uuid, json.dumps(u_model))
+        resphone = recommendPhone(u_model['pool'][0])
+        return {'status': 1, 'msg': 'success', 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
-
 
 # 用户消息
 @api.post("/userMessage")
 def usermsgres(page: userMsg, db: Session = Depends(get_db)):
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
-        resphone = recommendPhone()
+        resphone = recommendPhone(45)
         intent, res_text = detect_intent_texts("mobilephone-xlojne", page.uuid, page.message, 'en')
         return {'status': 1, 'msg': res_text, 'phone': resphone}
     else:

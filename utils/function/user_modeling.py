@@ -189,15 +189,22 @@ def update_user_preference_value(updated_user_preference_value, liked_item_info,
     return copy.deepcopy(updated_user_preference_value)
 
 
-def update_user_model(user_model, user_interaction_dialog, user_browsed_items, current_recommended_item,
-                      categorical_attributes, numerical_attributes, key, item_info_dict):
+def update_user_model(user_model, user_interaction_dialog, current_recommended_item,
+                      categorical_attributes, numerical_attributes, item_info_dict):
+    """
+    :param user_model: 用户模型
+    :param user_interaction_dialog: 用户和chatbot交互的记录
+    :param current_recommended_item: 当前推荐的项目id
+    :param categorical_attributes:  预定义的手机属性项
+    :param numerical_attributes:  预定义的手机属性项
+    :param item_info_dict: 所有的手机，key是id，value是手机json 记录
+    :return:
+    """
     updated_user_preference_value = user_model['user_preference_model']['preference_value']
     updated_user_attribute_frequency = user_model['user_preference_model']['attribute_frequency']
     updated_user_constraints = user_model['user_constraints']
     updated_user_critique_preference = user_model['user_critique_preference']
     numerical_crit_direction_limit = ['higher', 'lower', 'normal', 'similar']
-
-    updated_user_preference_model = user_model['user_preference_model']
 
     for utterance_info in user_interaction_dialog:
         current_action = utterance_info['action'].lower()
@@ -205,7 +212,7 @@ def update_user_model(user_model, user_interaction_dialog, user_browsed_items, c
         # -> update (1) user critique preference, (2) preference model: attribute frequency, (3) user constraints,
 
         time_helper.print_current_time()
-        print("Update User Model ---- User Action: %s." % (current_action))
+        print("Update User Model ---- User Action: %s." % current_action)
 
         if current_action == "user_critique" or current_action == "accept_suggestion":
             critique_list = []
@@ -232,10 +239,10 @@ def update_user_model(user_model, user_interaction_dialog, user_browsed_items, c
                     updated_user_attribute_frequency[attr] = updated_user_attribute_frequency[attr] * 2
                     time_helper.print_current_time()
                     print("update attribute frequence: attribute (%s) - %f. " % (
-                    attr, updated_user_attribute_frequency[attr]))
+                        attr, updated_user_attribute_frequency[attr]))
                     # user critique preference
                     updated_user_critique_preference = update_user_critique_preference(updated_user_critique_preference,
-                                                                                       attr, \
+                                                                                       attr,
                                                                                        criti_value, critique_item_info,
                                                                                        numerical_attributes, 'pos')
             # pp.pprint(updated_user_critique_preference)
@@ -274,13 +281,13 @@ def update_user_model(user_model, user_interaction_dialog, user_browsed_items, c
                             updated_user_attribute_frequency[attr] = updated_user_attribute_frequency[attr] / 2
                             time_helper.print_current_time()
                             print("update attribute frequence: attribute (%s) - %f. " % (
-                            attr, updated_user_attribute_frequency[attr]))
+                                attr, updated_user_attribute_frequency[attr]))
 
                     if check_consective_reject_SC == False:
                         updated_user_attribute_frequency[attr] = updated_user_attribute_frequency[attr] * 0.75
                         time_helper.print_current_time()
                         print("update attribute frequence: attribute (%s) - %f. " % (
-                        attr, updated_user_attribute_frequency[attr]))
+                            attr, updated_user_attribute_frequency[attr]))
 
                     # user critique preferencef
                     updated_user_critique_preference = update_user_critique_preference(updated_user_critique_preference,
@@ -290,29 +297,6 @@ def update_user_model(user_model, user_interaction_dialog, user_browsed_items, c
 
         # Condition 3: accept the recommendation
         if current_action == "accept_item" or current_action == "request_rate":
-            # --- Revise ---- system critique - accept -> update critique preference, attribute frequency, user constraints
-            # # if the recommended item is based on system critiques
-            # # -> update (1) user critique preference (if "sys_critique"), (2) preference model: attribute frequency, (3) user constraints,
-
-            # if len(sys_critique_list) > 0:
-            #     critique_list = sys_critique_list
-            #     critique_item_id = utterance_info['critiqued_item']
-            #     critique_item_info = {}
-            #     for item in user_listened_longs:
-            #         if item['id'] == critique_item_id:
-            #             critique_item_info = item
-
-            #     for crit in critique_list:
-            #         for attr, criti_value in crit.items():
-            #             # preference model: attribute frequency
-            #             updated_user_attribute_frequency[attr] = updated_user_attribute_frequency[attr] + 1
-            #             # user critique preference
-            #             updated_user_critique_preference = update_user_critique_preference(updated_user_critique_preference, attr, criti_value, critique_item_info, numerical_attributes)
-
-            #     # user constraint
-            #     constraint_number = 3
-            #     updated_user_constraints = update_user_constraints(updated_user_critique_preference, constraint_number)
-
             # ------------------------------------------------
             # Update preference value based on the liked items
             # ------------------------------------------------

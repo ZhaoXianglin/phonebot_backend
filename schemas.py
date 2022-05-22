@@ -38,6 +38,25 @@ class Record(BaseModel):
 #     weight: int
 #     year: str
 
+class BaseLogMogel(BaseModel):
+    agent: str
+    action: str
+    timestamp: datetime
+
+    @validator("timestamp", pre=True)
+    def dt_validate(cls, timestamp):
+        return datetime.fromtimestamp(timestamp / 1000)
+
+
+class LoggerModel(Record):
+    logger: list
+    lTime: datetime
+
+    @validator("lTime", pre=True)
+    def dt_validate(cls, lTime):
+        return datetime.fromtimestamp(lTime / 1000)
+
+
 class UserModel(BaseModel):
     preferenceData: dict
     _id: str
@@ -100,7 +119,6 @@ class Preference(Record):
     brands: str
     budget: int
     cameras: str
-    user_profile: UserProfile
     preferT: datetime
 
     @validator("preferT", pre=True)
