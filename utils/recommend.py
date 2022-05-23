@@ -207,7 +207,7 @@ def GetRec(json_data):
     time_helper.print_current_time()
     print('Get Recommendation ---- run time : %ss ' % str(end - start))
 
-    return json.dumps(recommendation_and_user_profile), 201
+    return recommendation_and_user_profile
 
 
 def GetSysCri(json_data):

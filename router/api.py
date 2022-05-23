@@ -117,12 +117,14 @@ async def updatemodel(request: Request, page: LoggerModel, db: Session = Depends
         u_model = json.loads(u_model)
         u_model['logger']['latest_dialog'] = page.logger
         u_model = UpdateUserModel(u_model)
-        u_model['topRecommendedItem'] = u_model['pool'][0]
+        recommended = GetRec(u_model)
+        print(recommended)
+        u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
         # 清空最新的操作记录
         u_model['logger']['latest_dialog'] = []
         # 将模型redis持久化
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
-        resphone = recommendPhone(u_model['pool'][0])
+        resphone = recommendPhone(recommended['recommendation_list'][0])
         return {'status': 1, 'msg': 'success', 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
