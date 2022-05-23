@@ -127,14 +127,15 @@ async def updatemodel(request: Request, page: LoggerModel, db: Session = Depends
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
+
 # 用户消息
 @api.post("/userMessage")
 def usermsgres(page: userMsg, db: Session = Depends(get_db)):
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
-        resphone = recommendPhone(45)
-        intent, res_text = detect_intent_texts("mobilephone-xlojne", page.uuid, page.message, 'en')
-        return {'status': 1, 'msg': res_text, 'phone': resphone}
+        res = detect_intent_texts("mobilephone-xlojne", page.uuid, page.message, 'en')
+        print(res['intent'], res['text'], res['entities'])
+        return {'status': 1, 'msg': res['text'], 'phone': 'resphone'}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
