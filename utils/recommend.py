@@ -218,11 +218,7 @@ def GetSysCri(json_data):
     user_profile = json_data
     user_preference_model = user_profile['user']['user_preference_model']
     user_critique_preference = user_profile['user']['user_critique_preference']
-    user_constraints = user_profile['user']['user_constraints']
     item_pool_name_list = user_profile['pool']
-    new_item_pool_name_list = user_profile['new_pool']
-
-    user_interaction_log = user_profile['logger']
 
     cur_rec = user_profile['topRecommendedItem']
     cur_rec = copy.deepcopy(item_info_dict[cur_rec])
@@ -235,28 +231,20 @@ def GetSysCri(json_data):
     time_helper.print_current_time()
 
     new_item_pool = []
-    new_pool_item_info_dict = {}
-    for item in new_item_pool_name_list:
-        new_item_pool.append(item_info_dict[item])
-        new_pool_item_info_dict[item] = item_info_dict[item]
 
     top_K = 3
     unit_or_compound = [1, 2]
 
     item_pool_for_SC = item_pool
-    new_item_pool_state = False
 
     if len(new_item_pool) > 0:
-        new_item_pool_state = True
         item_pool_for_SC = new_item_pool
 
     time_helper.print_current_time()
     print("Get System Critiques ---- Item Pool: %d songs" % len(item_pool_for_SC))
     method = 'MAUT_COMPAT'
     alpha = 0.5
-    top_k_candidates = 150
 
-    # top_k_candidates = min([top_k_candidates, len(filtered_item_pool)])
     estimated_score_dict = recommendation.compute_recommendation(user_preference_model, user_critique_preference,
                                                                  item_pool_for_SC, len(item_pool_for_SC),
                                                                  categorical_attributes, numerical_attributes,
@@ -281,7 +269,6 @@ def GetSysCri(json_data):
     print("Get System Critiques ---- system critique generation version: %s" % sys_crit_version)
 
     state = 'SC_and_Recommendation'
-    sys_crit = None
     sys_crit = system_critiquing.generate_system_critiques_preference_oriented(user_preference_model,
                                                                                user_critique_preference,
                                                                                estimated_score_dict,
@@ -292,15 +279,14 @@ def GetSysCri(json_data):
 
     time_helper.print_current_time()
     print(state)
-    # time_helper.print_current_time()
-    # pp.pprint(sys_crit)
+
     sys_crit_with_rec_list = {'state': state, 'result': sys_crit}
 
     end = time.process_time()
     time_helper.print_current_time()
     print('Get System Critiques ---- run time : %ss ' % str(end - start))
 
-    return json.dumps(sys_crit_with_rec_list), 201
+    return sys_crit_with_rec_list
 
 
 def TriggerSysCri(json_data):
