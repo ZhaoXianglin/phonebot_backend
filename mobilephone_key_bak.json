@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "mobilephone-xlojne",
+  "private_key_id": "3f18943556a80cd88b080c1880cb67041d40fded",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDBF5q6MhhmqX6F\nviPfviyAdxumRiy5z2USv8znNsTCOFNbJoUOjyf01l7uWEDUSUU6EriUGX9J2tPs\nMjmBoYW/WACtt0Hsrp+EoWyiPVjDKahLWlhGyu7wavuI80fciqoLXtF/kBSbGEU4\nS2dkG38l20LqOtORVKhRDf+nLHdYGTD3leZcuGEHu3NKGAttcQGPgf8IAfK+sZUy\nWw87G8anWF1VvTG6vDlaNitVkqBe7nro9rtTg7bvO/8Zb8DMLV6eO5InpTaHpA8C\nHOctQ6SR2IhbrSqdFxvfDrh/gbQcHqD70FwDR06MgioCKZ3NovyO6xxkHVJddO4o\nF8rGtjy/AgMBAAECggEAKZrVavMqUMyKh3S9tBL88b04Ru5t6qdmRtDu7I7ffF24\nkDZPiyCLYnTiRYbciSE0elvYS4jm5VnyOb1kqKrN77mdg9Ctsrq5glFp39dKDdsm\n+P2Bcdd9/m1+vzZ0MG/sTcDjcRHxbq2fFI8iuu41yklhNKjyNyk/jx9uC25IVMHQ\nHghwaMWsYH2ex7TATFF9TP39jEBjye8LRi40MasKuziXnNqlco4mEBv1tbR9lEeB\nCTR9htI3FRpXnwzRtSf5ndGPYzBo0zgDecY7fnIGyu08hqFDJwPumLp8UprkHnNT\n/bqGPpjDLgc+CJh1aDzPSdOP6rKfpFipHqlKAuJquQKBgQD+W8+w6/dTxxfKVWBs\ntE0jjkSIWBPPS3S9BiYBfEcQjPvKGEsjXVj9QE6681tZsGe1822XmOGQF+QoXwtr\nOPLT0bxYNaUgsJCXFMOc/8kePP+BSYSizkQt+U6Oki1uIB9mIQc+BQ/46Em6Ivz7\nDi4/a4/XHHjdKrkOSJWZETpfWwKBgQDCVpVzp8rWt6gK1CE4tbxW2B5A926niEnb\nd9U3hFxKhUM72ZqyKCsKrUGiWnP8LPTvCrgP9nbAqQQIhXvC6WbV5Jr6aFmtwAAv\nSbiyreCITu/ql7f9TA7HvfS4CfN4KMkkm/oxY46qhn/T9w86+5qsYBdrF6B/4HDU\ne3JyLC9ZbQKBgQDeLhhnNFbgSUJQrO8DRSM0casPZdA3/HNGQb6lAYeZv2yZBUts\n4rc+0BN1XelnmJ2e47nQ9+vfz96uHQd+a0pBGC1q58ELou9J6QtNcmidDy8oIa3I\nAGCxv9mM08b3MPv8W9FVrVpcU5tDChjsu2BOaYhFoEs69XycK27xO4k/jQKBgQCR\n3ru/XCr8kE4qEp/9GSyNYxsSWKdOSRZnDcOVMFy18uFMg0GCiHQGR5YEbzCwEG6p\nHrqaAL2ST0sfulHzM45k7nsFil4F9SAuXn+sXqcyqU2cINWR4w0VEJgnrBB8GOEi\nAZICkF/9z4cTa1abR1AKIvZxBAMM+UK3uxFkcZX44QKBgQC8Ea26VfrYIolmOlTS\nWGbc7ejzBwiIjKlf3iNRw73/rqUS7Af7SR97UcHGpgkVCcXBWJL6Ylll4mS3tex+\nPN7CHNU5b/pv8wSI7a8Gra+2zDTBezD1HIR53BuPq7Qydb0yKvmJvGnPlddpHJ3c\nUI3umskw3qWE2kEOJPisysJrQw==\n-----END PRIVATE KEY-----\n",
+  "client_email": "phonebot@mobilephone-xlojne.iam.gserviceaccount.com",
+  "client_id": "101023575180237886541",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/phonebot%40mobilephone-xlojne.iam.gserviceaccount.com"
+}
