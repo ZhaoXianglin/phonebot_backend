@@ -98,6 +98,8 @@ async def prefer(request: Request, page: Preference, db: Session = Depends(get_d
         # 更新计算后的用户模型
         u_model = InitializeUserModel(u_model)
         u_model['topRecommendedItem'] = u_model['pool'][0]
+        # 将推荐项从pool中移除
+        u_model['pool'].pop(0)
         # 将模型redis持久化
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
         # 获取给用户返回的手机
@@ -107,7 +109,7 @@ async def prefer(request: Request, page: Preference, db: Session = Depends(get_d
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
 
-# 更新用户偏好
+# 更新用户偏好,加入购物车
 @api.post("/updatemodel")
 async def updatemodel(request: Request, page: LoggerModel, db: Session = Depends(get_db)):
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
@@ -118,14 +120,68 @@ async def updatemodel(request: Request, page: LoggerModel, db: Session = Depends
         u_model['logger']['latest_dialog'] = page.logger
         u_model = UpdateUserModel(u_model)
         recommended = GetRec(u_model)
-        print(recommended)
         u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
+        # 移除已经推荐的项目
+        u_model['pool'].remove(recommended['recommendation_list'][0])
         # 清空最新的操作记录
         u_model['logger']['latest_dialog'] = []
         # 将模型redis持久化
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
         resphone = recommendPhone(recommended['recommendation_list'][0])
         return {'status': 1, 'msg': 'success', 'phone': resphone}
+    else:
+        return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
+
+
+def wordGene(words):
+    if words[0] == 'os1': words[0] = 'OS'
+    if words[0] == 'brand':
+        return ['from', words[1], '']
+    if words[0] == 'year':
+        return ['announced', 'after', words[1]]
+
+    if words[1] == 'ture':
+        return ['with', words[0], '']
+    if words[1] == 'false':
+        return ['without', words[0], '']
+    return ['with', words[1], words[0]]
+
+
+def createCriRes(critique):
+    if len(critique) == 2:
+        tp1 = wordGene(critique[0].split("|"))
+        tp2 = wordGene(critique[1].split("|"))
+
+        if tp1[0] in ['with', 'without'] and tp2[0] in ['with', 'without'] and tp1[0] != tp2[0]:
+            hyphenation = 'but'
+        else:
+            hyphenation = "and"
+        tpl = "Do you want to see phones {0} {1} {2} {3} {4} {5} {6}?".format(tp1[0], tp1[1], tp1[2], hyphenation,
+                                                                              tp2[0], tp2[1], tp2[2]).replace("  ", " ")
+        return tpl
+    else:
+        return "I have some phones to recommend to you, would you like to take a look?"
+
+
+# 获取系统推荐
+@api.post("/syscri")
+async def syscri(request: Request, page: LoggerModel, db: Session = Depends(get_db)):
+    # 调用GetSysCri，有两种情况，一种是点击两次try another 情况，另一种是点击let bot suggest
+    user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
+    if user:
+        u_model = await request.app.state.redis.get(page.uuid)
+        u_model = json.loads(u_model)
+        u_model['logger']['latest_dialog'] = page.logger
+        response = GetSysCri(u_model)
+        # 组装给前端的返回
+        phones = {'crit': [], 'phones': []}
+        for n, item in enumerate(response['result']):
+            phones['crit'].append(createCriRes(item['critique']))
+            phones['phones'].append(item['recommendation'])
+            for pid in item['recommendation']:
+                # 从pool中去掉系统推荐的9项
+                if pid in u_model['pool']: u_model['pool'].remove(pid)
+        return {'status': 1, 'msg': 'success', 'phones': phones}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
