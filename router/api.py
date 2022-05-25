@@ -25,7 +25,7 @@ def recommendPhone(pid: int):
 
 @api.get('/')
 async def index():
-    intent, res_text = detect_intent_texts("mobilephone-xlojne", '123456789', "hello", 'zh-CN')
+    intent, res_text = detect_intent_texts("phonebot-auym", '123456789', "hello", 'zh-CN')
     print(intent, '---')
 
 
@@ -185,14 +185,95 @@ async def syscri(request: Request, page: LoggerModel, db: Session = Depends(get_
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
+def parseResponse(res):
+    intent = res['intent']
+    text = res['text']
+    entities = res['entities']
+    update_action = {
+        "attr": "",
+        "action": "",
+    }
+    if intent == "by_body":
+        value = entities['phone-body']
+        update_action['attr'] = "phone_thickness"
+        if value == "thin":
+            update_action['action'] = "low"
+        elif value == "thick":
+            update_action['action'] = "high"
+    elif intent == "by_brand":
+        value = entities['phone-brand']
+        update_action['attr'] = "brand"
+        update_action['action'] = value
+    elif intent == "by_camera":
+        value = entities['phone-camera']
+        update_action['attr'] = "camera"
+        if value == "selfie" | "professional":
+            update_action['action'] = "high"
+    elif intent == "by_cpu":
+        value = entities['phone-cpu']
+        #TODO: cpu参数不在数据里面，如果没有我们可以再看
+        update_action['attr'] = "cpu"
+        if value == "powerful":
+            update_action['action'] = "high"
+    elif intent == "by_os":
+        update_action['attr'] = "os1"
+        value = entities['phone-os']
+        update_action['action'] = value
+    elif intent == "by_popularity":
+        value = entities['phone-popular']
+        update_action['attr'] = "popularity"
+        if value == "popular":
+            update_action['action'] = "high"
+    elif intent == "by_price":
+        value = entities['phone-price']
+        update_action['attr'] = "price"
+        if value == "cheap":
+            update_action['action'] = "low"
+        elif value == "expensive":
+            update_action['action'] = "high"
+        elif value == "normal":
+            update_action['action'] = "normal"
+    elif intent == "by_weight":
+        value = entities['phone-weight']
+        update_action['attr'] = "phone_weight"
+        if value == "light":
+            update_action['action'] = "low"
+        elif value == "heavy":
+            update_action['action'] = "high"
+    elif intent == "by_year":
+        value = entities['phone-year']
+        update_action['attr'] = "year"
+        if value == "old":
+            update_action['action'] = "low"
+        elif value == "new":
+            update_action['action'] = "high"
+    elif intent == "phone_search_attribute":
+        value1 = entities['critique-attribute']
+        value2 = entities['critique-action']
+        if value1 & value2:
+            update_action['attr'] = value1
+            update_action['action'] = value2
+        else:
+            return ("error message")
+    elif intent == "by_feature":
+        value = entities['phone-feature']
+        #TODO:change network
+        update_action['attr'] = value
+        update_action['action'] = "true"
+
+    updatemodel(update_action)
+
 
 # 用户消息
 @api.post("/userMessage")
 def usermsgres(page: userMsg, db: Session = Depends(get_db)):
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
-        res = detect_intent_texts("mobilephone-xlojne", page.uuid, page.message, 'en')
+        res = detect_intent_texts("phonebot-auym", page.uuid, page.message, 'en')
         print(res['intent'], res['text'], res['entities'])
+        # update user model
+        parseResponse(res)
+
         return {'status': 1, 'msg': res['text'], 'phone': 'resphone'}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
