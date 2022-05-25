@@ -162,6 +162,73 @@ def createCriRes(critique):
     else:
         return "I have some phones to recommend to you, would you like to take a look?"
 
+def sort_dict_by_value(d, reverse = False):
+  return dict(sorted(d.items(), key = lambda x: x[1], reverse = reverse))
+
+
+def getValueRange(key, value):
+    #TODO: judge the range of the key
+    explanation_value = ""
+    if key == "nettech" | "os1":
+        explanation_value = "the phone supports " + value
+    elif key == "nfc" | "fullscreen":
+        explanation_value = "the phone supports " + key
+    elif key == "brand":
+        explanation_value = "the phone's brand is " + value
+    elif key == "year":
+        #TODO: this value need to be checked again
+        if value > 3:
+            explanation_value = "this is one of the latest mobile phone released this year."
+        else:
+            explanation_value = "this phone may has a discount although it is not the latest phone."
+    elif key == "phone_size":
+        if value > 3:
+            explanation_value = "this phone has a large size."
+        else:
+            explanation_value = "this phone has a small size."
+    elif key == "phone_weight":
+        if value > 3:
+            explanation_value = "this phone looks heavy."
+        else:
+            explanation_value = "this phone is lightweight."
+    elif key == "camera":
+        if value > 3:
+            explanation_value = "this phone has decent cameras."
+        else:
+            explanation_value = "this phone's camera can meet daily requirements."
+    elif key == "storage":
+        if value > 3:
+            explanation_value = "this phone has a larger storage space."
+        else:
+            explanation_value = "this phone has a relatively small storage space."
+    elif key == "ram":
+        if value > 3:
+            explanation_value = "this phone has a larger internal storage."
+        else:
+            explanation_value = "this phone has a modest internal storage."
+    elif key == "price":
+        if value > 3:
+            explanation_value = "this phone is more advanced but also costs more money."
+        else:
+            explanation_value = "this phone has a lower price."
+
+    return explanation_value
+
+def geneExpBasedOnProductFeatures(user_preference_model, currentItem):
+    keyAttr = user_preference_model['attribute_frequency']
+    sortedKeyValue = sort_dict_by_value(keyAttr, True)
+    #based on product attributes top two keys
+    topkey1 = list(sortedKeyValue.keys())[0]
+    topvalue1 = currentItem[topkey1]
+    explanation = "We recommend this phone because " + getValueRange(topkey1, topvalue1)+ "."
+    return explanation
+
+def geneExpBasedOnCrit(user_critique_preference):
+    key1 = user_critique_preference['attribute']
+    value1 = user_critique_preference['crit_direction']
+    explanation = "We recommend this phone because you want the phones that have "+ value1 +" " + key1 +"."
+    return explanation
+
 
 # 获取系统推荐
 @api.post("/syscri")
