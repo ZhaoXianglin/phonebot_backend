@@ -185,6 +185,7 @@ async def syscri(request: Request, page: LoggerModel, db: Session = Depends(get_
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
+
 def parseResponse(res):
     intent = res['intent']
     text = res['text']
@@ -197,9 +198,9 @@ def parseResponse(res):
         value = entities['phone-body']
         update_action['attr'] = "phone_thickness"
         if value == "thin":
-            update_action['action'] = "low"
+            update_action['action'] = "lower"
         elif value == "thick":
-            update_action['action'] = "high"
+            update_action['action'] = "higher"
     elif intent == "by_brand":
         value = entities['phone-brand']
         update_action['attr'] = "brand"
@@ -208,13 +209,13 @@ def parseResponse(res):
         value = entities['phone-camera']
         update_action['attr'] = "camera"
         if value == "selfie" | "professional":
-            update_action['action'] = "high"
+            update_action['action'] = "higher"
     elif intent == "by_cpu":
         value = entities['phone-cpu']
-        #TODO: cpu参数不在数据里面，如果没有我们可以再看
+        # TODO: cpu参数不在数据里面，如果没有我们可以再看
         update_action['attr'] = "cpu"
         if value == "powerful":
-            update_action['action'] = "high"
+            update_action['action'] = "higher"
     elif intent == "by_os":
         update_action['attr'] = "os1"
         value = entities['phone-os']
@@ -223,30 +224,30 @@ def parseResponse(res):
         value = entities['phone-popular']
         update_action['attr'] = "popularity"
         if value == "popular":
-            update_action['action'] = "high"
+            update_action['action'] = "higher"
     elif intent == "by_price":
         value = entities['phone-price']
         update_action['attr'] = "price"
         if value == "cheap":
-            update_action['action'] = "low"
+            update_action['action'] = "lower"
         elif value == "expensive":
-            update_action['action'] = "high"
+            update_action['action'] = "higher"
         elif value == "normal":
             update_action['action'] = "normal"
     elif intent == "by_weight":
         value = entities['phone-weight']
         update_action['attr'] = "phone_weight"
         if value == "light":
-            update_action['action'] = "low"
+            update_action['action'] = "lower"
         elif value == "heavy":
-            update_action['action'] = "high"
+            update_action['action'] = "higher"
     elif intent == "by_year":
         value = entities['phone-year']
         update_action['attr'] = "year"
         if value == "old":
-            update_action['action'] = "low"
+            update_action['action'] = "lower"
         elif value == "new":
-            update_action['action'] = "high"
+            update_action['action'] = "higher"
     elif intent == "phone_search_attribute":
         value1 = entities['critique-attribute']
         value2 = entities['critique-action']
@@ -257,24 +258,36 @@ def parseResponse(res):
             return ("error message")
     elif intent == "by_feature":
         value = entities['phone-feature']
-        #TODO:change network
+        # TODO:change network
         update_action['attr'] = value
         update_action['action'] = "true"
 
-    updatemodel(update_action)
+    return {update_action['attr']: update_action['action']}
 
 
 # 用户消息
 @api.post("/userMessage")
-def usermsgres(page: userMsg, db: Session = Depends(get_db)):
+async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_db)):
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         res = detect_intent_texts("phonebot-auym", page.uuid, page.message, 'en')
-        print(res['intent'], res['text'], res['entities'])
-        # update user model
-        parseResponse(res)
-
-        return {'status': 1, 'msg': res['text'], 'phone': 'resphone'}
+        # print(res)
+        page.logger[-1]['critique'].append(parseResponse(res))
+        # print(page.logger[-1])
+        u_model = await request.app.state.redis.get(page.uuid)
+        u_model = json.loads(u_model)
+        u_model['logger']['latest_dialog'] = page.logger
+        u_model = UpdateUserModel(u_model)
+        recommended = GetRec(u_model)
+        u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
+        # 移除已经推荐的项目
+        u_model['pool'].remove(recommended['recommendation_list'][0])
+        # 清空最新的操作记录
+        u_model['logger']['latest_dialog'] = []
+        # 将模型redis持久化
+        await request.app.state.redis.set(page.uuid, json.dumps(u_model))
+        resphone = recommendPhone(recommended['recommendation_list'][0])
+        return {'status': 1, 'msg': res['text'], 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 

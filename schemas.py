@@ -112,6 +112,7 @@ class Page1(Record):
 
 class userMsg(Record):
     message: str
+    logger: list
     msgT: datetime
 
 
