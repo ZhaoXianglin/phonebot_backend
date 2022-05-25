@@ -187,7 +187,6 @@ async def syscri(request: Request, page: LoggerModel, db: Session = Depends(get_
 
 def parseResponse(res):
     intent = res['intent']
-    text = res['text']
     entities = res['entities']
     update_action = {
         "attr": "",
@@ -211,13 +210,16 @@ def parseResponse(res):
             update_action['action'] = "high"
     elif intent == "by_cpu":
         value = entities['phone-cpu']
-        #TODO: cpu参数不在数据里面，如果没有我们可以再看
         update_action['attr'] = "cpu"
         if value == "powerful":
             update_action['action'] = "high"
     elif intent == "by_os":
         update_action['attr'] = "os1"
         value = entities['phone-os']
+        update_action['action'] = value
+    elif intent == "by_net":
+        update_action['attr'] = "nettech"
+        value = entities['phone-net']
         update_action['action'] = value
     elif intent == "by_popularity":
         value = entities['phone-popular']
@@ -257,11 +259,10 @@ def parseResponse(res):
             return ("error message")
     elif intent == "by_feature":
         value = entities['phone-feature']
-        #TODO:change network
         update_action['attr'] = value
         update_action['action'] = "true"
 
-    updatemodel(update_action)
+    return update_action
 
 
 # 用户消息
