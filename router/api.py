@@ -98,12 +98,13 @@ async def prefer(request: Request, page: Preference, db: Session = Depends(get_d
         # 更新计算后的用户模型
         u_model = InitializeUserModel(u_model)
         u_model['topRecommendedItem'] = u_model['pool'][0]
+        # 获取给用户返回的手机
+        resphone = recommendPhone(u_model['pool'][0])
         # 将推荐项从pool中移除
         u_model['pool'].pop(0)
         # 将模型redis持久化
+        print(u_model)
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
-        # 获取给用户返回的手机
-        resphone = recommendPhone(u_model['pool'][0])
         return {'status': 1, 'msg': 'success', 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
@@ -115,11 +116,12 @@ async def updatemodel(request: Request, page: LoggerModel, db: Session = Depends
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         u_model = await request.app.state.redis.get(page.uuid)
-        print(u_model)
+        # print(u_model)
         u_model = json.loads(u_model)
         u_model['logger']['latest_dialog'] = page.logger
         u_model = UpdateUserModel(u_model)
         recommended = GetRec(u_model)
+        print(recommended,recommended['recommendation_list'][0])
         u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
         # 移除已经推荐的项目
         u_model['pool'].remove(recommended['recommendation_list'][0])
@@ -274,7 +276,7 @@ def parseResponse(res):
     elif intent == "by_camera":
         value = entities['phone-camera']
         update_action['attr'] = "camera"
-        if value == "selfie" | "professional":
+        if value == "selfie" or "professional":
             update_action['action'] = "higher"
     elif intent == "by_cpu":
         value = entities['phone-cpu']
