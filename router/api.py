@@ -121,7 +121,7 @@ async def updatemodel(request: Request, page: LoggerModel, db: Session = Depends
         u_model['logger']['latest_dialog'] = page.logger
         u_model = UpdateUserModel(u_model)
         recommended = GetRec(u_model)
-        print(recommended,recommended['recommendation_list'][0])
+        print(recommended, recommended['recommendation_list'][0])
         u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
         # 移除已经推荐的项目
         u_model['pool'].remove(recommended['recommendation_list'][0])
@@ -130,7 +130,8 @@ async def updatemodel(request: Request, page: LoggerModel, db: Session = Depends
         # 将模型redis持久化
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
         resphone = recommendPhone(recommended['recommendation_list'][0])
-        return {'status': 1, 'msg': 'success', 'phone': resphone}
+        resmsg = geneExpBasedOnProductFeatures(u_model['user']['user_preference_model'], resphone)
+        return {'status': 1, 'msg': resmsg, 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
@@ -164,21 +165,23 @@ def createCriRes(critique):
     else:
         return "I have some phones to recommend to you, would you like to take a look?"
 
-def sort_dict_by_value(d, reverse = False):
-  return dict(sorted(d.items(), key = lambda x: x[1], reverse = reverse))
+
+def sort_dict_by_value(d, reverse=False):
+    return dict(sorted(d.items(), key=lambda x: x[1], reverse=reverse))
 
 
 def getValueRange(key, value):
-    #TODO: judge the range of the key
+    # TODO: judge the range of the key
     explanation_value = ""
-    if key == "nettech" | "os1":
+    if key == "nettech" or key == "os1":
         explanation_value = "the phone supports " + value
-    elif key == "nfc" | "fullscreen":
+    elif key == "nfc" or key == "fullscreen":
         explanation_value = "the phone supports " + key
     elif key == "brand":
         explanation_value = "the phone's brand is " + value
+        print(explanation_value)
     elif key == "year":
-        #TODO: this value need to be checked again
+        # TODO: this value need to be checked again
         if value > 3:
             explanation_value = "this is one of the latest mobile phone released this year."
         else:
@@ -216,19 +219,41 @@ def getValueRange(key, value):
 
     return explanation_value
 
+
+def row2dict(row):
+    d = {}
+    for column in row.__table__.columns:
+        d[column.name] = str(getattr(row, column.name))
+
+    return d
+
+
 def geneExpBasedOnProductFeatures(user_preference_model, currentItem):
+    """
+    初始化的时候推荐，
+    :param user_preference_model:
+    :param currentItem:
+    :return:
+    """
+    currentItem = row2dict(currentItem)
     keyAttr = user_preference_model['attribute_frequency']
     sortedKeyValue = sort_dict_by_value(keyAttr, True)
-    #based on product attributes top two keys
+    # based on product attributes top two keys
     topkey1 = list(sortedKeyValue.keys())[0]
     topvalue1 = currentItem[topkey1]
-    explanation = "We recommend this phone because " + getValueRange(topkey1, topvalue1)+ "."
+    explanation = "We recommend this phone because " + getValueRange(topkey1, topvalue1) + "."
     return explanation
 
+
 def geneExpBasedOnCrit(user_critique_preference):
+    """
+    用户发送信息的时候触发
+    :param user_critique_preference:
+    :return:
+    """
     key1 = user_critique_preference['attribute']
     value1 = user_critique_preference['crit_direction']
-    explanation = "We recommend this phone because you want the phones that have "+ value1 +" " + key1 +"."
+    explanation = "We recommend this phone because you want the phones that have " + value1 + " " + key1 + "."
     return explanation
 
 
@@ -320,7 +345,7 @@ def parseResponse(res):
         elif value == "new":
             update_action['action'] = "higher"
     elif intent == "phone_search_attribute":
-        value1 = entities['critique-attribute']
+        value1 = entities['phone-attribute']
         value2 = entities['critique-action']
         if value1 & value2:
             update_action['attr'] = value1
@@ -348,9 +373,14 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
         u_model['logger']['latest_dialog'] = page.logger
         u_model = UpdateUserModel(u_model)
         recommended = GetRec(u_model)
-        u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
-        # 移除已经推荐的项目
-        u_model['pool'].remove(recommended['recommendation_list'][0])
+        if len(recommended['recommendation_list'])>0:
+            u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
+            # 移除已经推荐的项目
+            u_model['pool'].remove(recommended['recommendation_list'][0])
+        else:
+            u_model['topRecommendedItem'] = u_model['pool'][0]
+            # 移除已经推荐的项目
+            u_model['pool'].pop(0)
         # 清空最新的操作记录
         u_model['logger']['latest_dialog'] = []
         # 将模型redis持久化
