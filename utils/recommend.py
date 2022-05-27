@@ -195,6 +195,7 @@ def GetRec(json_data):
                                                                       integrated_item_pool, max_item_pool_number,
                                                                       categorical_attributes, numerical_attributes,
                                                                       method, alpha)
+
         print("Get Recommendation ---- Updated Item Pool: %d songs." % (len(updated_item_pool)))
 
         user_profile['pool'] = updated_item_pool
@@ -311,3 +312,5 @@ def TriggerSysCri(json_data):
     print('Determine Whether to Trigger System Critiques ---- run time : %ss ' % str(end - start))
 
     return json.dumps(determination_triggerSC), 201
+
+

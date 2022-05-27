@@ -93,7 +93,7 @@ async def prefer(request: Request, page: Preference, db: Session = Depends(get_d
         # 更新品牌/价格/摄像头像素数
         u_model["user"]["preferenceData"]["brand"] = page.brands.split(",")
         u_model["user"]["preferenceData"]["price"] = [0, page.budget]
-        u_model["user"]["preferenceData"]["camera"] = [0, int(page.cameras)]
+        u_model["user"]["preferenceData"]["camera"] = [int(page.cameras), 108]
 
         # 更新计算后的用户模型
         u_model = InitializeUserModel(u_model)
@@ -347,11 +347,10 @@ def parseResponse(res):
     elif intent == "phone_search_attribute":
         value1 = entities['phone-attribute']
         value2 = entities['critique-action']
-        if value1 & value2:
-            update_action['attr'] = value1
-            update_action['action'] = value2
-        else:
-            return ("error message")
+        if len(value1) > 0:
+            update_action['attr'] = value1[0]
+        if len(value2) > 0:
+            update_action['action'] = value2[0]
     elif intent == "by_feature":
         value = entities['phone-feature']
         update_action['attr'] = value
@@ -366,18 +365,29 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         res = detect_intent_texts("phonebot-auym", page.uuid, page.message, 'en')
-        page.logger[-1]['critique'].append(parseResponse(res))
-        # print(page.logger[-1])
+        parse_res = parseResponse(res)
+        page.logger[-1]['critique'].append(parse_res)
         u_model = await request.app.state.redis.get(page.uuid)
         u_model = json.loads(u_model)
+        # print(u_model, '-------------')
         u_model['logger']['latest_dialog'] = page.logger
         u_model = UpdateUserModel(u_model)
+        # print(u_model, '+++++++++++++')
+        # 处理品牌扩展
+        if parse_res.__contains__("brand") and parse_res.get('brand') not in u_model['user']['preferenceData']['brand']:
+            other_phone = db.query(ph_phones.id).filter(ph_phones.brand == parse_res.get('brand')).all()
+            phone_ids = []
+            for item in other_phone:
+                phone_ids.append(item[0])
+            u_model['pool'].extend(phone_ids)
         recommended = GetRec(u_model)
-        if len(recommended['recommendation_list'])>0:
+        print(recommended)
+        if len(recommended['recommendation_list']) > 0:
             u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
             # 移除已经推荐的项目
             u_model['pool'].remove(recommended['recommendation_list'][0])
         else:
+            res['text'] = "I didn't find an appropriate phone for you, maybe you can try this one."
             u_model['topRecommendedItem'] = u_model['pool'][0]
             # 移除已经推荐的项目
             u_model['pool'].pop(0)
@@ -385,7 +395,7 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
         u_model['logger']['latest_dialog'] = []
         # 将模型redis持久化
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
-        resphone = recommendPhone(recommended['recommendation_list'][0])
+        resphone = recommendPhone(u_model['topRecommendedItem'])
         return {'status': 1, 'msg': res['text'], 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
