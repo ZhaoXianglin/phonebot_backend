@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from random import randint
 import hashlib
 import json
+import random
 from schemas import Record, Accept, Preference, startPage, Page1, CommonRes, Page2, Page3, Page4, userMsg, LoggerModel
 from utils.tools import detect_intent_texts
 from utils.recommend import InitializeUserModel, UpdateUserModel, GetRec, GetSysCri
@@ -174,50 +175,51 @@ def getValueRange(key, value):
     # TODO: judge the range of the key
     explanation_value = ""
     if key == "nettech" or key == "os1":
-        explanation_value = "the phone supports " + value
+        explanation_value = " supports " + value
     elif key == "nfc" or key == "fullscreen":
-        explanation_value = "the phone supports " + key
+        explanation_value = " supports " + key
     elif key == "brand":
-        explanation_value = "the phone's brand is " + value
+        explanation_value = " is made by " + value
         print(explanation_value)
     elif key == "year":
         # TODO: this value need to be checked again
         if value > 3:
-            explanation_value = "this is one of the latest mobile phone released this year."
+            explanation_value = " is one of the latest mobile phone released this year."
         else:
-            explanation_value = "this phone may has a discount although it is not the latest phone."
+            explanation_value = " may has a discount although it is not the latest phone."
     elif key == "phone_size":
         if value > 3:
-            explanation_value = "this phone has a large size."
+            explanation_value = " has a large size."
         else:
-            explanation_value = "this phone has a small size."
+            explanation_value = " has a small size."
     elif key == "phone_weight":
         if value > 3:
-            explanation_value = "this phone looks heavy."
+            explanation_value = " looks heavy."
         else:
-            explanation_value = "this phone is lightweight."
+            explanation_value = " is lightweight."
     elif key == "camera":
         if value > 3:
-            explanation_value = "this phone has decent cameras."
+            explanation_value = " has decent cameras."
         else:
-            explanation_value = "this phone's camera can meet daily requirements."
+            explanation_value = " has cameras that can meet daily requirements."
     elif key == "storage":
         if value > 3:
-            explanation_value = "this phone has a larger storage space."
+            explanation_value = " has a larger storage space."
         else:
-            explanation_value = "this phone has a relatively small storage space."
+            explanation_value = " has a relatively small storage space."
     elif key == "ram":
         if value > 3:
-            explanation_value = "this phone has a larger internal storage."
+            explanation_value = " has a larger internal storage."
         else:
-            explanation_value = "this phone has a modest internal storage."
+            explanation_value = " has a modest internal storage."
     elif key == "price":
         if value > 3:
-            explanation_value = "this phone is more advanced but also costs more money."
+            explanation_value = " is more advanced but also costs more money."
         else:
-            explanation_value = "this phone has a lower price."
+            explanation_value = " has a lower price."
 
     return explanation_value
+
 
 
 def row2dict(row):
@@ -239,9 +241,12 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem):
     keyAttr = user_preference_model['attribute_frequency']
     sortedKeyValue = sort_dict_by_value(keyAttr, True)
     # based on product attributes top two keys
-    topkey1 = list(sortedKeyValue.keys())[0]
+    keyIndex = random.randint(0, 3)
+    topkey1 = list(sortedKeyValue.keys())[keyIndex]
+    topkey2 = list(sortedKeyValue.keys())[3-keyIndex]
     topvalue1 = currentItem[topkey1]
-    explanation = "We recommend this phone because " + getValueRange(topkey1, topvalue1) + "."
+    topvalue2 = currentItem[topkey2]
+    explanation = "We recommend this phone because this phone" + getValueRange(topkey1, topvalue1) + " and it" + getValueRange(topkey2, topvalue2)+"."
     return explanation
 
 
