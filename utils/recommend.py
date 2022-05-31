@@ -9,8 +9,8 @@ import copy
 
 pp = pprint.PrettyPrinter(indent=4)
 
-categorical_attributes = ['brand', 'nettech', 'os1', 'nfc', 'year', 'fullscreen']
-numerical_attributes = ['phone_size', 'phone_weight', 'camera', 'storage', 'ram', 'price']
+categorical_attributes = ['brand', 'nettech', 'os1', 'nfc', 'fullscreen']
+numerical_attributes = ['phone_size', 'phone_weight', 'camera', 'storage', 'ram', 'price', 'year', 'cpu']
 
 #  Load Phone Data
 phone_data_file = './data/new_phone_data.json'
@@ -312,5 +312,3 @@ def TriggerSysCri(json_data):
     print('Determine Whether to Trigger System Critiques ---- run time : %ss ' % str(end - start))
 
     return json.dumps(determination_triggerSC), 201
-
-

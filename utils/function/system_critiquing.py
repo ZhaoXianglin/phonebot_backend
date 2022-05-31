@@ -92,7 +92,8 @@ def compute_critique_utility_preference_oriented(user_attribute_frequency, frequ
 
         # print(sorted_item_score_dict)
         for i in range(topK):
-            item_preference_score_term += sorted_item_score_dict[i][1]
+            if len(sorted_item_score_dict[i]) > 0:
+                item_preference_score_term += sorted_item_score_dict[i][1]
         item_preference_score_term = item_preference_score_term / topK
         # print(item_preference_score_term)
 

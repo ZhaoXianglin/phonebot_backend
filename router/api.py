@@ -5,7 +5,8 @@ from random import randint
 import hashlib
 import json
 import random
-from schemas import Record, Accept, Preference, startPage, Page1, CommonRes, Page2, Page3, Page4, userMsg, LoggerModel
+from schemas import Record, IdRecord, Accept, Preference, startPage, Page1, CommonRes, Page2, Page3, Page4, userMsg, \
+    LoggerModel
 from utils.tools import detect_intent_texts
 from utils.recommend import InitializeUserModel, UpdateUserModel, GetRec, GetSysCri
 from utils.function.user_model_default import user_model
@@ -38,14 +39,14 @@ async def phone(id: int, db: Session = Depends(get_db)):
 
 
 # 接受知情同意书，返回接受按钮
-@api.post("/accept", response_model=Record)
+@api.post("/accept", response_model=IdRecord)
 def accept(user: Accept, db: Session = Depends(get_db)):
     uuid = generate_uuid()
     db_user = ph_records(accT=user.accT, uuid=uuid, device=user.device)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    res = Record(uuid=db_user.uuid)
+    res = IdRecord(uuid=db_user.uuid, id=db_user.id, condition=db_user.id % 3 + 1)
     return res
 
 
@@ -122,16 +123,23 @@ async def updatemodel(request: Request, page: LoggerModel, db: Session = Depends
         u_model['logger']['latest_dialog'] = page.logger
         u_model = UpdateUserModel(u_model)
         recommended = GetRec(u_model)
-        print(recommended, recommended['recommendation_list'][0])
-        u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
-        # 移除已经推荐的项目
-        u_model['pool'].remove(recommended['recommendation_list'][0])
+        if len(recommended['recommendation_list']) > 0:
+            u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
+            # 移除已经推荐的项目
+            u_model['pool'].remove(recommended['recommendation_list'][0])
+        else:
+            u_model['topRecommendedItem'] = u_model['pool'][0]
+            # 移除已经推荐的项目
+            u_model['pool'].pop(0)
+
         # 清空最新的操作记录
         u_model['logger']['latest_dialog'] = []
         # 将模型redis持久化
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
-        resphone = recommendPhone(recommended['recommendation_list'][0])
+        resphone = recommendPhone(u_model['topRecommendedItem'])
         resmsg = geneExpBasedOnProductFeatures(u_model['user']['user_preference_model'], resphone)
+        if len(resmsg) < 2:
+            resmsg = "I didn't find an appropriate phone for you, maybe you can try this one."
         return {'status': 1, 'msg': resmsg, 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
@@ -139,6 +147,11 @@ async def updatemodel(request: Request, page: LoggerModel, db: Session = Depends
 
 def wordGene(words):
     if words[0] == 'os1': words[0] = 'OS'
+    if words[0] == 'nettech': words[0] = 'network type'
+    if words[0] == 'phone_size': words[0] = 'phone size'
+    if words[0] == 'phone_thickness': words[0] = 'phone thickness'
+    if words[0] == 'phone_weight': words[0] = 'phone weight'
+    if words[0] == 'display_size': words[0] = 'display size'
     if words[0] == 'brand':
         return ['from', words[1], '']
     if words[0] == 'year':
@@ -183,43 +196,42 @@ def getValueRange(key, value):
         print(explanation_value)
     elif key == "year":
         # TODO: this value need to be checked again
-        if value > 3:
+        if int(value[:4]) > 3:
             explanation_value = " is one of the latest mobile phone released this year."
         else:
             explanation_value = " may has a discount although it is not the latest phone."
     elif key == "phone_size":
-        if value > 3:
+        if float(value) > 3:
             explanation_value = " has a large size."
         else:
             explanation_value = " has a small size."
     elif key == "phone_weight":
-        if value > 3:
+        if float(value) > 3:
             explanation_value = " looks heavy."
         else:
             explanation_value = " is lightweight."
     elif key == "camera":
-        if value > 3:
+        if float(value) > 3:
             explanation_value = " has decent cameras."
         else:
             explanation_value = " has cameras that can meet daily requirements."
     elif key == "storage":
-        if value > 3:
+        if float(value) > 3:
             explanation_value = " has a larger storage space."
         else:
             explanation_value = " has a relatively small storage space."
     elif key == "ram":
-        if value > 3:
+        if float(value) > 3:
             explanation_value = " has a larger internal storage."
         else:
             explanation_value = " has a modest internal storage."
     elif key == "price":
-        if value > 3:
+        if float(value) > 3:
             explanation_value = " is more advanced but also costs more money."
         else:
             explanation_value = " has a lower price."
 
     return explanation_value
-
 
 
 def row2dict(row):
@@ -243,10 +255,12 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem):
     # based on product attributes top two keys
     keyIndex = random.randint(0, 3)
     topkey1 = list(sortedKeyValue.keys())[keyIndex]
-    topkey2 = list(sortedKeyValue.keys())[3-keyIndex]
+    topkey2 = list(sortedKeyValue.keys())[3 - keyIndex]
     topvalue1 = currentItem[topkey1]
     topvalue2 = currentItem[topkey2]
-    explanation = "We recommend this phone because this phone" + getValueRange(topkey1, topvalue1) + " and it" + getValueRange(topkey2, topvalue2)+"."
+    explanation = "We recommend this phone because this phone" + getValueRange(topkey1,
+                                                                               topvalue1) + " and it" + getValueRange(
+        topkey2, topvalue2) + "."
     return explanation
 
 
@@ -386,7 +400,7 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
                 phone_ids.append(item[0])
             u_model['pool'].extend(phone_ids)
         recommended = GetRec(u_model)
-        print(recommended)
+        # print(recommended)
         if len(recommended['recommendation_list']) > 0:
             u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
             # 移除已经推荐的项目
@@ -401,6 +415,8 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
         # 将模型redis持久化
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
         resphone = recommendPhone(u_model['topRecommendedItem'])
+        if len(res['text']) < 2:
+            res['text'] = "I didn't find an appropriate phone for you, maybe you can try this one."
         return {'status': 1, 'msg': res['text'], 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
@@ -449,6 +465,8 @@ def page4(page: Page4, db: Session = Depends(get_db)):
         md5 = hashlib.md5()
         md5.update(("jyc" + page.uuid).encode("utf-8"))
         code = md5.hexdigest()
-        return CommonRes(status=1, msg=code)
+        return CommonRes(status=1, msg=code[:8].upper())
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement or try again later.')
+
+# 转发请求内容

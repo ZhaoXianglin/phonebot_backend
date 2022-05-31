@@ -9,6 +9,11 @@ class Record(BaseModel):
     uuid: str
 
 
+class IdRecord(Record):
+    condition: int
+    id: int
+
+
 # class PhoneBase(BaseModel):
 #     id: int
 #     battery: int
@@ -93,6 +98,7 @@ class PhoneRes(CommonRes):
 
 class startPage(Record):
     startT: datetime
+    condition: int
 
     @validator("startT", pre=True)
     def dt_validate(cls, startT):
