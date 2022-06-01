@@ -118,8 +118,13 @@ async def updatemodel(request: Request, page: LoggerModel, db: Session = Depends
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         u_model = await request.app.state.redis.get(page.uuid)
-        print(u_model, "=========before===========")
+        # print(u_model, "=========before===========")
         u_model = json.loads(u_model)
+        # 防止池空
+        if len(u_model['pool']) < 20:
+            print("Danger: pool")
+            u_model = InitializeUserModel(u_model)
+
         u_model['logger']['latest_dialog'] = page.logger
         u_model = UpdateUserModel(u_model)
         if hasattr(u_model, 'recommendation_list'):
@@ -154,7 +159,7 @@ async def updatemodel(request: Request, page: LoggerModel, db: Session = Depends
         u_model['logger']['latest_dialog'] = []
         # 将模型redis持久化
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
-        print(u_model, "=========after===========")
+        # print(u_model, "=========after===========")
         resphone = recommendPhone(u_model['topRecommendedItem'])
         resmsg = geneExpBasedOnProductFeatures(u_model['user']['user_preference_model'], resphone)
         if len(resmsg) < 2:
@@ -303,6 +308,11 @@ async def syscri(request: Request, page: LoggerModel, db: Session = Depends(get_
     if user:
         u_model = await request.app.state.redis.get(page.uuid)
         u_model = json.loads(u_model)
+        # 防止池空
+        if len(u_model['pool']) < 20:
+            print("Danger: pool")
+            u_model = InitializeUserModel(u_model)
+
         u_model['logger']['latest_dialog'] = page.logger
         response = GetSysCri(u_model)
         # 组装给前端的返回
