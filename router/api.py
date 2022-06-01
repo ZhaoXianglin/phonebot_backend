@@ -457,16 +457,22 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
 
-# chatbot页面提交时间
+# prestudy 页面提交时间
 @api.post("/page2")
-def page2(page: Page2, db: Session = Depends(get_db)):
+async def page2(request: Request, page: Page2, db: Session = Depends(get_db)):
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         update_info = page.dict(exclude_unset=True)
         for k, v in update_info.items():
-            setattr(user, k, v)
+            if k == 'page2T':
+                setattr(user, k, v)
         db.commit()
         db.flush()
+        u_model = await request.app.state.redis.get(page.uuid)
+        # print(u_model, "=========before===========")
+        u_model = json.loads(u_model)
+        u_model['logger']['likedItems'] = page.phonelist
+        await request.app.state.redis.set(page.uuid, json.dumps(u_model))
         return CommonRes(status=1, msg='success')
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
