@@ -118,24 +118,43 @@ async def updatemodel(request: Request, page: LoggerModel, db: Session = Depends
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         u_model = await request.app.state.redis.get(page.uuid)
-        # print(u_model)
+        print(u_model, "=========before===========")
         u_model = json.loads(u_model)
         u_model['logger']['latest_dialog'] = page.logger
         u_model = UpdateUserModel(u_model)
-        recommended = GetRec(u_model)
-        if len(recommended['recommendation_list']) > 0:
-            u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
-            # 移除已经推荐的项目
-            u_model['pool'].remove(recommended['recommendation_list'][0])
+        if hasattr(u_model, 'recommendation_list'):
+            if len(u_model['recommendation_list']) > 0:
+                u_model['topRecommendedItem'] = u_model['recommendation_list'][0]
+                # 移除已经推荐的项目
+                u_model['pool'].remove(u_model['recommendation_list'][0])
+                u_model['recommendation_list'] = u_model['recommendation_list'][1:]
+            else:
+                recommended = GetRec(u_model)
+                if len(recommended['recommendation_list']) > 0:
+                    u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
+                    # 移除已经推荐的项目
+                    u_model['recommendation_list'] = recommended['recommendation_list'][1:]
+                    u_model['pool'].remove(recommended['recommendation_list'][0])
+                else:
+                    u_model['topRecommendedItem'] = u_model['pool'][0]
+                    # 移除已经推荐的项目
+                    u_model['pool'].pop(0)
         else:
-            u_model['topRecommendedItem'] = u_model['pool'][0]
-            # 移除已经推荐的项目
-            u_model['pool'].pop(0)
-
+            recommended = GetRec(u_model)
+            if len(recommended['recommendation_list']) > 0:
+                u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
+                # 移除已经推荐的项目
+                u_model['recommendation_list'] = recommended['recommendation_list'][1:]
+                u_model['pool'].remove(recommended['recommendation_list'][0])
+            else:
+                u_model['topRecommendedItem'] = u_model['pool'][0]
+                # 移除已经推荐的项目
+                u_model['pool'].pop(0)
         # 清空最新的操作记录
         u_model['logger']['latest_dialog'] = []
         # 将模型redis持久化
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
+        print(u_model, "=========after===========")
         resphone = recommendPhone(u_model['topRecommendedItem'])
         resmsg = geneExpBasedOnProductFeatures(u_model['user']['user_preference_model'], resphone)
         if len(resmsg) < 2:
@@ -279,7 +298,7 @@ def geneExpBasedOnCrit(user_critique_preference):
 # 获取系统推荐
 @api.post("/syscri")
 async def syscri(request: Request, page: LoggerModel, db: Session = Depends(get_db)):
-    # 调用GetSysCri，有两种情况，一种是点击两次try another 情况，另一种是点击let bot suggest
+    # 调用GetSysCri，有两种情况，一种是点击三次try another 情况，另一种是点击let bot suggest
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         u_model = await request.app.state.redis.get(page.uuid)
@@ -294,6 +313,7 @@ async def syscri(request: Request, page: LoggerModel, db: Session = Depends(get_
             for pid in item['recommendation']:
                 # 从pool中去掉系统推荐的9项
                 if pid in u_model['pool']: u_model['pool'].remove(pid)
+                if pid in u_model['recommendation_list']: u_model['recommendation_list'].remove(pid)
         return {'status': 1, 'msg': 'success', 'phones': phones}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
@@ -404,6 +424,7 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
         if len(recommended['recommendation_list']) > 0:
             u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
             # 移除已经推荐的项目
+            u_model['recommendation_list'] = recommended['recommendation_list'][1:]
             u_model['pool'].remove(recommended['recommendation_list'][0])
         else:
             res['text'] = "I didn't find an appropriate phone for you, maybe you can try this one."
