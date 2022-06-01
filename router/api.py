@@ -322,8 +322,12 @@ async def syscri(request: Request, page: LoggerModel, db: Session = Depends(get_
             phones['phones'].append(item['recommendation'])
             for pid in item['recommendation']:
                 # 从pool中去掉系统推荐的9项
-                if pid in u_model['pool']: u_model['pool'].remove(pid)
-                if pid in u_model['recommendation_list']: u_model['recommendation_list'].remove(pid)
+                if pid in u_model['pool']:
+                    print(pid)
+                    u_model['pool'].remove(pid)
+                if pid in u_model['recommendation_list']:
+                    u_model['recommendation_list'].remove(pid)
+        await request.app.state.redis.set(page.uuid, json.dumps(u_model))
         return {'status': 1, 'msg': 'success', 'phones': phones}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
