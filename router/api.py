@@ -6,7 +6,7 @@ import hashlib
 import json
 import random
 from schemas import Record, IdRecord, Accept, Preference, startPage, Page1, CommonRes, Page2, Page3, Page4, userMsg, \
-    LoggerModel
+    LoggerModel, tutorPage
 from utils.tools import detect_intent_texts
 from utils.recommend import InitializeUserModel, UpdateUserModel, GetRec, GetSysCri
 from utils.function.user_model_default import user_model
@@ -65,6 +65,21 @@ def start(page: startPage, db: Session = Depends(get_db)):
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement or try again later.')
 
 
+# 完成tutorial按钮
+@api.post("/tutorial")
+def tutorial(page: tutorPage, db: Session = Depends(get_db)):
+    user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
+    if user:
+        update_info = page.dict(exclude_unset=True)
+        for k, v in update_info.items():
+            setattr(user, k, v)
+        db.commit()
+        db.flush()
+        return CommonRes(status=1, msg='success')
+    else:
+        return CommonRes(status=0, msg='Error, Please accept the informed consent statement or try again later.')
+
+
 # demographic
 @api.post("/page1")
 def page1(page: Page1, db: Session = Depends(get_db)):
@@ -111,6 +126,22 @@ async def prefer(request: Request, page: Preference, db: Session = Depends(get_d
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
+
+# @api.post("onlyupdate")
+# async def onlyupdate(request: Request, page: LoggerModel, db: Session = Depends(get_db)):
+#     """
+#     仅更新模型不返回内容
+#     :param request:
+#     :param page:
+#     :param db:
+#     :return:
+#     """
+#     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
+#     if user:
+#         u_model = await request.app.state.redis.get(page.uuid)
+#         u_model = json.loads(u_model)
+#         u_model['logger']['latest_dialog'] = page.logger
+#         u_model = UpdateUserModel(u_model)
 
 # 更新用户偏好,加入购物车
 @api.post("/updatemodel")
@@ -179,7 +210,10 @@ def wordGene(words):
     if words[0] == 'brand':
         return ['from', words[1], '']
     if words[0] == 'year':
-        return ['announced', 'after', words[1]]
+        if words[1] == 'higher':
+            return ['was', 'announced', "recently"]
+        else:
+            return ['was', 'announced', "earlier"]
 
     if words[1] == 'ture':
         return ['with', words[0], '']

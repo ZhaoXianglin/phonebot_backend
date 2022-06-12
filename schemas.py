@@ -105,6 +105,14 @@ class startPage(Record):
         return datetime.fromtimestamp(startT / 1000)
 
 
+class tutorPage(Record):
+    tutorT: datetime
+
+    @validator("tutorT", pre=True)
+    def dt_validate(cls, tutorT):
+        return datetime.fromtimestamp(tutorT / 1000)
+
+
 class Page1(Record):
     gender: str
     age: str
@@ -192,6 +200,8 @@ class Page3(Record):
     cui_human2: int
     cui_human3: int
 
+    chk1: int
+
     @validator("page3T", pre=True)
     def dt_validate(cls, page3T):
         return datetime.fromtimestamp(page3T / 1000)
@@ -227,6 +237,7 @@ class Page4(Record):
     intent2purchase2: int
     intent2purchase3: int
 
+    chk2: int
     page4T: datetime
 
     @validator("page4T", pre=True)
