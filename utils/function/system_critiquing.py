@@ -90,10 +90,13 @@ def compute_critique_utility_preference_oriented(user_attribute_frequency, frequ
             item_score_dict[item] = estimated_score_dict[item]
         sorted_item_score_dict = helper.sort_dict(item_score_dict)
 
-        # print(sorted_item_score_dict)
+        print(sorted_item_score_dict)
+        if topK > len(sorted_item_score_dict):
+            topK = len(sorted_item_score_dict)
         for i in range(topK):
             if len(sorted_item_score_dict[i]) > 0:
-                item_preference_score_term += sorted_item_score_dict[i][1]
+                if len(sorted_item_score_dict[i]) > 1:
+                    item_preference_score_term += sorted_item_score_dict[i][1]
         item_preference_score_term = item_preference_score_term / topK
         # print(item_preference_score_term)
 
@@ -387,7 +390,7 @@ def generate_system_critiques_preference_oriented(user_info, user_critique_prefe
 
     time_helper.print_current_time()
     print('Frequent critiques (support value: %f):  %d (%s).' % (
-    min_support, len(frequent_critiques_freq_dict), str(unit_or_compound)))
+        min_support, len(frequent_critiques_freq_dict), str(unit_or_compound)))
 
     # -------------------------------------------------------
     # --------------------  Apropri   -----------------------
