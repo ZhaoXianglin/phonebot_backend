@@ -46,7 +46,7 @@ def accept(user: Accept, db: Session = Depends(get_db)):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    res = IdRecord(uuid=db_user.uuid, id=db_user.id, condition=db_user.id % 3 + 1)
+    res = IdRecord(uuid=db_user.uuid, id=db_user.id, condition=db_user.id % 4 + 1)
     return res
 
 
@@ -120,9 +120,10 @@ async def prefer(request: Request, page: Preference, db: Session = Depends(get_d
         # 将推荐项从pool中移除
         u_model['pool'].pop(0)
         # 将模型redis持久化
-        print(u_model)
+        # print(u_model)
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
-        return {'status': 1, 'msg': 'success', 'phone': resphone}
+        resmsg = geneExpBasedOnProductFeatures(u_model['user']['user_preference_model'], resphone)
+        return {'status': 1, 'msg': resmsg, 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
@@ -452,6 +453,7 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         res = detect_intent_texts("phonebot-auym", page.uuid, page.message, 'en')
+        print(res)
         parse_res = parseResponse(res)
         page.logger[-1]['critique'].append(parse_res)
         u_model = await request.app.state.redis.get(page.uuid)
@@ -475,7 +477,7 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
             u_model['recommendation_list'] = recommended['recommendation_list'][1:]
             u_model['pool'].remove(recommended['recommendation_list'][0])
         else:
-            res['text'] = "I didn't find an appropriate phone for you, maybe you can try this one."
+            res['text'] = "error"
             u_model['topRecommendedItem'] = u_model['pool'][0]
             # 移除已经推荐的项目
             u_model['pool'].pop(0)
@@ -484,9 +486,17 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
         # 将模型redis持久化
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
         resphone = recommendPhone(u_model['topRecommendedItem'])
-        if len(res['text']) < 2:
-            res['text'] = "I didn't find an appropriate phone for you, maybe you can try this one."
-        return {'status': 1, 'msg': res['text'], 'phone': resphone}
+        if len(res['text']) < 2 or res['text'] == 'error' or len(res['entities']) == 0:
+            if len(res['entities']) == 0:
+                res['explain'] = geneExpBasedOnProductFeatures(u_model['user']['user_preference_model'], resphone)
+            else:
+                res['text'] = "I didn't find an appropriate phone for you, maybe you can try this one."
+                res['explain'] = geneExpBasedOnProductFeatures(u_model['user']['user_preference_model'], resphone)
+
+        if 'explain' in res:
+            return {'status': 1, 'msg': [res['text'], res['explain']], 'phone': resphone}
+        else:
+            return {'status': 1, 'msg': [res['text']], 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
@@ -540,7 +550,7 @@ def page4(page: Page4, db: Session = Depends(get_db)):
         md5 = hashlib.md5()
         md5.update(("jyc" + page.uuid).encode("utf-8"))
         code = md5.hexdigest()
-        return CommonRes(status=1, msg=code[:8].upper())
+        return CommonRes(status=1, msg=code[:6].upper())
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement or try again later.')
 

@@ -21,7 +21,7 @@ def detect_intent_texts(project_id, session_id, text, language_code):
     entities = {}
     for item in response.query_result.parameters:
         entities[item] = response.query_result.parameters[item]
-    print(entities)
+    # print(entities)
     print('Detected intent: {} (confidence: {})\n'.format(
         response.query_result.intent.display_name,
         response.query_result.intent_detection_confidence))
