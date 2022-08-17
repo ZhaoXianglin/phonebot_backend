@@ -10,7 +10,8 @@ import copy
 pp = pprint.PrettyPrinter(indent=4)
 
 categorical_attributes = ['brand', 'nettech', 'os1', 'nfc', 'fullscreen']
-numerical_attributes = ['phone_size', 'phone_weight', 'camera', 'storage', 'ram', 'price', 'year', 'cpu']
+numerical_attributes = ['phone_size', 'phone_weight', 'camera', 'storage', 'ram', 'price', 'year', 'cpu', 'battery',
+                        'displaysize']
 
 #  Load Phone Data
 phone_data_file = './data/new_phone_data.json'
@@ -29,11 +30,10 @@ print("Load Phone Data (%d)---- Done!" % len(item_pool))
 def InitializeUserModel(json_data):
     start = time.process_time()
     time_helper.print_current_time()
-    print("Initialize User Model ---- start")
+    # print("Initialize User Model ---- start")
     user_profile = json_data
-    user_preference_data = user_profile['user'][
-        'preferenceData']  # initial preference data: a list of ids of phones that user preferred
-
+    # initial preference data: a list of ids of phones that user preferred
+    user_preference_data = user_profile['user']['preferenceData']
     # initialize the user preference model ** using user preference data
     # preference model consists of two parts: attribute frequency and preference value for each attribute
     user_preference_model = user_modeling.initialize_user_preference_model(user_preference_data, item_info_dict,
@@ -42,20 +42,20 @@ def InitializeUserModel(json_data):
     user_profile['user']['user_preference_model'] = user_preference_model
 
     time_helper.print_current_time()
-    print("Initialize User Model ---- Part 1: User Preference Model --- Done!")
+    # print("Initialize User Model ---- Part 1: User Preference Model --- Done!")
 
     # initialize the user critique preference (empty)
     user_critique_preference = []
     user_profile['user']['user_critique_preference'] = user_critique_preference
 
     time_helper.print_current_time()
-    print("Initialize User Model ---- Part 2: User Critique Preference (empty) --- Done!")
+    # print("Initialize User Model ---- Part 2: User Critique Preference (empty) --- Done!")
 
     # initialize the user constraints (empty)
     user_constraint = []
     user_profile['user']['user_constraints'] = user_constraint
     time_helper.print_current_time()
-    print("Initialize User Model ---- Part 3: User Constraints (empty) --- Done!")
+    # print("Initialize User Model ---- Part 3: User Constraints (empty) --- Done!")
 
     ### obtain initial recommendations (top 150 based on MAUT)
     initial_recommendations_list = []

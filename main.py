@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from router import api
+from router import api, que, chat
 import asyncio
 
 import aioredis
@@ -15,6 +15,8 @@ app.add_middleware(
 )
 
 app.include_router(api.api)
+app.include_router(que.que)
+app.include_router(chat.chat)
 
 
 def register_redis(app: FastAPI):

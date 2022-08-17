@@ -12,7 +12,9 @@ user_model = {
             "phone_size": [],
             "phone_weight": [],
             "storage": [],
-            "ram": []
+            "ram": [],
+            "battery": [],
+            'displaysize': []
         },
         "uuid": "",
         "user_preference_model": {
@@ -28,7 +30,9 @@ user_model = {
                 "camera": {},
                 "storage": {},
                 "ram": {},
-                "price": {}
+                "price": {},
+                "battery": {},
+                "displaysize": {}
             },
             "attribute_frequency": {}
         },

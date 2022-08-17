@@ -42,6 +42,12 @@ def numerical_attribute_preference(preferred_value_min_max, attribute):
 #  version 1: initialize_user_preference_value --- based on the user's specified preference data
 def initialize_user_preference_value_based_on_specified_preference(user_preference_data, categorical_attributes,
                                                                    numerical_attributes):
+    """
+    :param user_preference_data:  用户模型的一部分 传入 user_profile['user']['preferenceData']
+    :param categorical_attributes: 分类的数据
+    :param numerical_attributes: 分等级的数据
+    :return:
+    """
     user_preference_value_dict = {}
     for attr in categorical_attributes:
         if attr not in user_preference_data.keys():
@@ -105,6 +111,15 @@ def initialize_user_preference_attribute_frequency(categorical_attributes, numer
 
 def initialize_user_preference_model(user_preference_data, item_info_dict, categorical_attributes,
                                      numerical_attributes):
+    """
+    初始化用户偏好
+    :param user_preference_data: 用户模型的一部分 传入 user_profile['user']['preferenceData']
+    :param item_info_dict: 没用到
+    :param categorical_attributes: categorical_attributes = ['brand', 'nettech', 'os1', 'nfc', 'fullscreen']
+    :param numerical_attributes: numerical_attributes = ['phone_size', 'phone_weight', 'camera', 'storage', 'ram', 'price', 'year', 'cpu', 'battery',
+                        'displaysize']
+    :return:
+    """
     #  ---- 2022/05
     #  version 1: initialize_user_preference_value --- based on specified preference value (e.g. specific brand, or range of price...)
     user_initial_preference_value = initialize_user_preference_value_based_on_specified_preference(user_preference_data,
@@ -115,13 +130,11 @@ def initialize_user_preference_model(user_preference_data, item_info_dict, categ
                                                                                          numerical_attributes)
     user_preference_model = {'preference_value': user_initial_preference_value,
                              'attribute_frequency': user_preference_attribute_frequency}
-
     # pp.pprint(user_preference_model)
-
-    time_helper.print_current_time()
-    print("Initialize User Model ---- Preference Model about %d categorical attributes." % len(categorical_attributes))
-    time_helper.print_current_time()
-    print("Initialize User Model ---- Preference Model about %d numerical attributes." % len(numerical_attributes))
+    # time_helper.print_current_time()
+    # print("Initialize User Model ---- Preference Model about %d categorical attributes." % len(categorical_attributes))
+    # time_helper.print_current_time()
+    # print("Initialize User Model ---- Preference Model about %d numerical attributes." % len(numerical_attributes))
     return user_preference_model
 
 

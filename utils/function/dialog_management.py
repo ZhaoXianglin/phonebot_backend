@@ -8,14 +8,13 @@ pp = pprint.PrettyPrinter(indent=4)
 
 
 def determine_trigger_sc_or_not(interaction_log, cur_rec, categorical_attributes, numerical_attributes):
-
     results_trigger_sc = False
     # Constratints
     num_recommendation_cycle_constraints = 3
 
     # Conditions
-    num_disliked_songs_condition = 3 # If the user clicks the “Next” button for n consecutive times.
-    num_listened_songs_condition = 4 # If the number of listened songs (from last SC) (== num_recommendation_cycle) >= n
+    num_disliked_songs_condition = 3  # If the user clicks the “Next” button for n consecutive times.
+    num_listened_songs_condition = 4  # If the number of listened songs (from last SC) (== num_recommendation_cycle) >= n
     # num_liked_songs_condition = 3 # If the total number of liked songs in the current genre >= n
 
     cur_rec_genre = cur_rec['genre']
@@ -34,7 +33,7 @@ def determine_trigger_sc_or_not(interaction_log, cur_rec, categorical_attributes
     pos_sys_crit = 0
     for utterance_info in previous_dialogue:
         action = utterance_info['action'].lower()
-        if action == "system_suggest" or action == "user_critique" :
+        if action == "system_suggest" or action == "user_critique":
             if 'critique' in utterance_info.keys():
                 pos_sys_crit = number_utterance
         number_utterance += 1
@@ -61,7 +60,7 @@ def determine_trigger_sc_or_not(interaction_log, cur_rec, categorical_attributes
         num_consectively_disliked_songs = 0
 
         for utterance_info in previous_dialogue[pos_sys_crit:]:
-            if utterance_info['agent']=='you':
+            if utterance_info['agent'] == 'you':
                 if utterance_info['action'].lower() == 'next' or 'next' in utterance_info['text'].lower():
                     num_consectively_disliked_songs += 1
                 if utterance_info['action'].lower() == 'accept_song':
@@ -91,7 +90,7 @@ def determine_trigger_sc_or_not(interaction_log, cur_rec, categorical_attributes
             print("num_recommendation_cycle: %d." % num_recommendation_cycle)
             results_trigger_sc = True
 
-        elif num_consectively_disliked_songs >= num_disliked_songs_condition :
+        elif num_consectively_disliked_songs >= num_disliked_songs_condition:
             time_helper.print_current_time()
             print("num_consectively_disliked_songs: %d." % num_consectively_disliked_songs)
             results_trigger_sc = True
@@ -103,5 +102,3 @@ def determine_trigger_sc_or_not(interaction_log, cur_rec, categorical_attributes
         results_trigger_sc = False
 
     return results_trigger_sc
-
-

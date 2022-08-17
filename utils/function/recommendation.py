@@ -9,7 +9,7 @@ pp = pprint.PrettyPrinter(indent=4)
 
 
 # ------------------------------------------------------------------
-#  Obtain Attribute Weigth
+#  Obtain Attribute Weight
 # ------------------------------------------------------------------
 def obtain_attribute_weight(user_pref_attribute_frequency):
     user_pref_attribute_weight_dict = {}

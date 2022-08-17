@@ -10,8 +10,9 @@ class Record(BaseModel):
 
 
 class IdRecord(Record):
-    condition: int
     id: int
+    identity_cue: int
+    explanation_style: int
 
 
 # class PhoneBase(BaseModel):
@@ -55,6 +56,7 @@ class BaseLogMogel(BaseModel):
 
 class LoggerModel(Record):
     logger: list
+    explanation_style: int
     lTime: datetime
 
     @validator("lTime", pre=True)
@@ -98,7 +100,6 @@ class PhoneRes(CommonRes):
 
 class startPage(Record):
     startT: datetime
-    condition: int
 
     @validator("startT", pre=True)
     def dt_validate(cls, startT):
@@ -124,25 +125,37 @@ class Page1(Record):
         return datetime.fromtimestamp(page1T / 1000)
 
 
+class Scenario(Record):
+    ScenarioT: datetime
+
+    @validator("ScenarioT", pre=True)
+    def dt_validate(cls, ScenarioT):
+        return datetime.fromtimestamp(ScenarioT / 1000)
+
+
 class userMsg(Record):
     message: str
     logger: list
+    explanation_style: int
     msgT: datetime
 
 
 class Preference(Record):
-    brands: str
-    budget: int
-    cameras: str
+    brand: Optional[str] = None
+    budget: Optional[int] = None
+    display_size: Optional[str] = None,
+    battery: Optional[str] = None,
+    weight: Optional[str] = None
+    explanation_style: int
     preferT: datetime
 
     @validator("preferT", pre=True)
     def dt_validate(cls, preferT):
         return datetime.fromtimestamp(preferT / 1000)
 
-    @validator("brands", pre=True)
-    def brands_validate(cls, brands):
-        return ",".join(brands)
+    # @validator("brands", pre=True)
+    # def brands_validate(cls, brands):
+    #     return ",".join(brands)
 
 
 class Page2(Record):
@@ -154,92 +167,130 @@ class Page2(Record):
         return datetime.fromtimestamp(page2T / 1000)
 
 
-class Page3(Record):
-    page3T: datetime
+class Que1(Record):
+    que1T: datetime
+    cui_human1: int
+    cui_human2: int
+    cui_human3: int
+
+    trust_propensity1: int
+    trust_propensity2: int
+    trust_propensity3: int
+
     accuracy1: int
     accuracy2: int
     accuracy3: int
 
     explain1: int
-    explain2: int
     explain3: int
-
-    cui_attentive2: int
-    cui_attentive5: int
-    cui_attentive6: int
-
-    cui_unders1: int
-    cui_unders2: int
-    cui_unders3: int
-
-    cui_response: int
-    cui_resQuali1: int
-    cui_resQuali3: int
-    cui_interPace: int
+    explain4: int
 
     social_presence1: int
     social_presence2: int
-    social_presence3: int
     social_presence4: int
 
-    trans1: int
-    trans2: int
-    trans3: int
-
-    control1: int
-    control4: int
-    control5: int
-
-    cui_positive1: int
-    cui_positive2: int
-    cui_positive3: int
-    cui_rapport1: int
-    cui_rapport2: int
-
-    cui_human1: int
-    cui_human2: int
-    cui_human3: int
-
-    chk1: int
-
-    @validator("page3T", pre=True)
-    def dt_validate(cls, page3T):
-        return datetime.fromtimestamp(page3T / 1000)
-
-
-class Page4(Record):
-    useful1: int
-    useful2: int
-    useful3: int
-
-    ease1: int
     ease4: int
     ease5: int
+    ease6: int
 
-    trust1: int
-    trust2: int
-    trust3: int
-    trust4: int
+    useful2: int
+    useful3: int
+    useful4: int
 
-    confidence1: int
-    confidence2: int
-    confidence4: int
+    check1: int
+    check2: int
 
-    satis1: int
-    satis2: int
-    satis3: int
+    @validator("que1T", pre=True)
+    def dt_validate(cls, que1T):
+        return datetime.fromtimestamp(que1T / 1000)
 
-    intent1: int
-    intent2: int
-    intent3: int
+
+class Que2(Record):
+    cui_attentive2: int
+    cui_attentive5: int
+    cui_attentive6: int
+    cui_attentive7: int
+
+    trust_compe1: int
+    trust_compe3: int
+    trust_compe4: int
+
+    trust_integity1: int
+    trust_integity2: int
+    trust_integity3: int
+
+    intent2depend1: int
+    intent2depend2: int
+    intent2depend3: int
+
+    intent2follow1: int
+    intent2follow2: int
+    intent2follow3: int
 
     intent2purchase1: int
     intent2purchase2: int
     intent2purchase3: int
 
-    chk2: int
-    page4T: datetime
+    que2T: datetime
 
-    @validator("page4T", pre=True)
-    def dt_validate(cls, page4T):
-        return datetime.fromtimestamp(page4T / 1000)
+    @validator("que2T", pre=True)
+    def dt_validate(cls, que2T):
+        return datetime.fromtimestamp(que2T / 1000)
+
+
+class Que3(Record):
+    accuracy4: int
+    explain2: int
+    social_presence3: int
+    ease1: int
+    useful1: int
+
+    cui_resQuali1: int
+    cui_resQuali3: int
+    cui_interPace: int
+    cui_response: int
+
+    cui_unders1: int
+    cui_unders2: int
+    cui_unders3: int
+
+    trans1: int
+    trans2: int
+    trans3: int
+    trans4: int
+
+    control1: int
+    control4: int
+    control5: int
+    control6: int
+
+    confidence1: int
+    confidence2: int
+    confidence4: int
+    confidence5: int
+
+    satis1: int
+    satis2: int
+    satis3: int
+
+    cui_positive1: int
+    cui_positive2: int
+    cui_positive3: int
+    cui_rapport2: int
+
+    que3T: datetime
+
+    @validator("que3T", pre=True)
+    def dt_validate(cls, que3T):
+        return datetime.fromtimestamp(que3T / 1000)
+
+
+class Que4(Record):
+    openended1: str
+    openended2: str
+
+    que4T: datetime
+
+    @validator("que4T", pre=True)
+    def dt_validate(cls, que4T):
+        return datetime.fromtimestamp(que4T / 1000)
