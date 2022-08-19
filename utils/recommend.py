@@ -11,7 +11,7 @@ pp = pprint.PrettyPrinter(indent=4)
 
 categorical_attributes = ['brand', 'nettech', 'os1', 'nfc', 'fullscreen']
 numerical_attributes = ['phone_size', 'phone_weight', 'camera', 'storage', 'ram', 'price', 'year', 'cpu', 'battery',
-                        'displaysize']
+                        'displaysize', 'phone_thickness']
 
 #  Load Phone Data
 phone_data_file = './data/new_phone_data.json'
@@ -198,7 +198,11 @@ def GetRec(json_data):
 
         print("Get Recommendation ---- Updated Item Pool: %d songs." % (len(updated_item_pool)))
 
-        user_profile['pool'] = updated_item_pool
+        temp_ids = []
+        for item in updated_item_pool:
+            temp_ids.append(item['id'])
+        user_profile['pool'] = temp_ids
+
         user_profile['new_pool'] = []
 
     recommendation_and_user_profile = {'recommendation_list': topK_recommendation_list,

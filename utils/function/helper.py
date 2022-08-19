@@ -9,13 +9,13 @@ sys.path.append("..")
 from utils.function.tool import time_helper, load_data, store_data
 
 
-def get_numerical_attribute_interval_label(attribute, value):
-    attribut_interval, interval_label = get_numerical_attribute_intervalindex(attribute)
-    intervals = pd.IntervalIndex.from_breaks(attribut_interval, closed='left')
-    interval_find = list(intervals.contains(value))
-    index = interval_find.index(True)
-    value_interval_label = interval_label[index]
-    return value_interval_label
+# def get_numerical_attribute_interval_label(attribute, value):
+#     attribut_interval, interval_label = get_numerical_attribute_intervalindex(attribute)
+#     intervals = pd.IntervalIndex.from_breaks(attribut_interval, closed='left')
+#     interval_find = list(intervals.contains(value))
+#     index = interval_find.index(True)
+#     value_interval_label = interval_label[index]
+#     return value_interval_label
 
 
 # -------------------------------------------------------------------------------------------
@@ -90,6 +90,7 @@ def get_numerical_attribute_rank(attribute, value):
     attribute_bin_edges = phone_data_numerical_bin_edges_dict[attribute]
     rank_total = len(attribute_bin_edges) - 1
     # print(rank_total)
+    # 这里已经是排序后的结果了
     if value < attribute_bin_edges[0]:
         return 1, rank_total
 
@@ -101,6 +102,26 @@ def get_numerical_attribute_rank(attribute, value):
 
     return value_rank, rank_total
 
+def get_numerical_attribute_rank_in(attribute, value):
+    # Phone Data Numerical Bin Edges List for Rank
+    # phone_data_numerical_bin_edges = 'data/phone_data_numerical_bin_edges.json'
+    # phone_data_numerical_bin_edges_dict = load_data.load_json_data(phone_data_numerical_bin_edges)
+
+    phone_data_numerical_bin_edges_dict = get_phone_data_numerical_bin_edges_dict()
+    attribute_bin_edges = phone_data_numerical_bin_edges_dict[attribute]
+    rank_total = len(attribute_bin_edges) - 1
+    # print(rank_total)
+    # 这里已经是排序后的结果了
+    if value < attribute_bin_edges[0]:
+        return 1, rank_total
+
+    value_rank = 1
+    for bin_edge in attribute_bin_edges[1:]:
+        if value < bin_edge:
+            return value_rank, rank_total
+        value_rank += 1
+
+    return value_rank, rank_total
 
 def get_numerical_attribute_rank_label(attribute):
     phone_data_numerical_bin_edges_dict = get_phone_data_numerical_bin_edges_dict()

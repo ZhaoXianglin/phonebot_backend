@@ -48,20 +48,20 @@ async def prefer(request: Request, page: Preference, db: Session = Depends(get_d
         if page.brand in ['Apple', 'Samsung', 'Huawei']:
             u_model["user"]["preferenceData"]["brand"] = [page.brand]
         else:
+            # 这里是不含'Apple', 'Samsung', 'Huawei'的全部品牌
+            brand = ['Xiaomi', 'vivo', 'Oppo', 'Realme', 'Motorola', 'Honor',
+                     'ZTE', 'BLU', 'Nokia', 'LG', 'Ulefone', 'Lava', 'TCL',
+                     'OnePlus', 'alcatel', 'Asus', 'Lenovo', 'Sony', 'Meizu',
+                     'Wiko', 'Tecno', 'Lava', 'Infinix', 'Google']
             if page.brand == '':
-                u_model["user"]["preferenceData"]["brand"] = ['Apple', 'Samsung', 'Huawei', 'Xiaomi', 'vivo', 'Oppo',
-                                                              'Realme', 'Motorola', 'Honor',
-                                                              'ZTE', 'BLU', 'Nokia', 'LG', 'Ulefone', 'Lava', 'TCL',
-                                                              'OnePlus', 'alcatel', 'Asus', 'Lenovo', 'Sony', 'Meizu',
-                                                              'Wiko', 'Tecno', 'Lava', 'Infinix', 'Google']
+                # 如果没选品牌
+                selected_brand = random.sample(brand, 5) + ['Apple', 'Samsung', 'Huawei']
+                u_model["user"]["preferenceData"]["brand"] = selected_brand
+                # print(random.sample(brand, 5))
             else:
-                u_model["user"]["preferenceData"]["brand"] = ['Xiaomi', 'vivo', 'Oppo', 'Realme', 'Motorola', 'Honor',
-                                                              'ZTE', 'BLU', 'Nokia', 'LG', 'Ulefone', 'Lava', 'TCL',
-                                                              'OnePlus', 'alcatel', 'Asus', 'Lenovo', 'Sony', 'Meizu',
-                                                              'Wiko', 'Tecno', 'Lava', 'Infinix', 'Google']
-        # u_model["user"]["preferenceData"]["brand"] = page.brand.split(",")
-        # 更新品牌/价格/摄像头像素数
-
+                # 选了品牌但是不喜欢这三种'Apple', 'Samsung', 'Huawei'
+                u_model["user"]["preferenceData"]["brand"] = random.sample(brand, 8)
+        # 更新预算，这是个必选的
         u_model["user"]["preferenceData"]["price"] = [0, int(page.budget)]
         # 初始化电池
         if page.battery == "Large":
@@ -149,8 +149,6 @@ async def update_model(request: Request, page: LoggerModel, db: Session = Depend
                 u_model['topRecommendedItem'] = u_model['pool'][0]
                 # 移除已经推荐的项目
                 u_model['pool'].pop(0)
-        # 清空最新的操作记录
-        u_model['logger']['latest_dialog'] = []
         # 将模型redis持久化
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
         # print(u_model, "=========after===========")
@@ -264,25 +262,28 @@ def row2dict(row):
     return d
 
 
-def attr_to_name(attr):
+def attr_to_name(attr, type=1):
+    pre_the = " "
+    if type == 1:
+        pre_the = 'the '
     if attr == 'nettech':
-        return "the cellular network"
+        return pre_the + "cellular network"
     elif attr == "os1":
-        return 'the OS'
+        return pre_the + 'OS'
     elif attr == "nfc":
-        return 'the NFC'
+        return pre_the + 'NFC'
     elif attr == "fullscreen":
-        return "the screen"
+        return pre_the + "screen"
     elif attr == "phone_size":
-        return "the size"
+        return pre_the + "phone size"
     elif attr == "year":
-        return "the release time"
+        return pre_the + "release time"
     elif attr == "cpu":
-        return "the processor speed"
+        return pre_the + "processor speed"
     elif attr == "displaysize":
-        return "the display size"
+        return pre_the + "display size"
     else:
-        return 'the ' + attr
+        return pre_the + attr
 
 
 def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanation_type):
@@ -303,25 +304,36 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanatio
     keyIndex = random.randint(0, 3)
     topkey1 = list(sortedKeyValue.keys())[keyIndex]
     topkey2 = list(sortedKeyValue.keys())[3 - keyIndex]
+    if topkey2 == 'camera':
+        topkey2 = 'cam1'
+    if topkey1 == 'camera':
+        topkey1 = 'cam1'
+    if topkey1 == 'fullscreen':
+        topkey1 = 'displaysize'
+    if topkey2 == 'fullscreen':
+        topkey2 = 'displaysize'
+
     topvalue1 = currentItem[topkey1]
     topvalue2 = currentItem[topkey2]
     print(topvalue1, topvalue2, explanation_type)
     explanation = ""
     # Non-social explanations
     if explanation_type == 1:
-        explanation = "I recommend this phone because it " + getValueRange(topkey1,
-                                                                           topvalue1) + " and it" + getValueRange(
-            topkey2, topvalue2) + "."
+        explanation1 = "I recommend this phone because it can meet the high requirements of {0} and {1}.".format(
+            attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
+        explanation2 = "It can meet the high requirements of {0} and {1}, so this phone might fit you well.".format(
+            attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
+        explanation = random.choice([explanation1, explanation2])
     # Social explanations (third-party opinions)
     if explanation_type == 2:
         slot_customers = ["Most", "Some", "Many"]
-        slot_think = ["have similar preferences with you think", "bought this phone think", 'liked this phone because']
-        explanation = "{0} of our customers who {1} it can meet their high requirements for{2} and {3}, so I recommend this phone.".format(
+        slot_think = ["who have similar preferences with you think", "who bought this phone think", 'liked this phone because']
+        explanation = "<b>{0} of our customers {1}</b> it can meet their high requirements for {2} and {3}, so I recommend this phone.".format(
             random.choice(slot_customers), random.choice(slot_think), attr_to_name(topkey1), attr_to_name(topkey2))
     if explanation_type == 3:
         slot_my = ["tried it out", "tested it", "compared it with other phones"]
-        slot_reason = ["meet my high requirement for", "performs well regarding", "is well rated for"]
-        explanation = "I recommend this phone because I have {0} by myself and think it {1} {2} and {3}.".format(
+        slot_reason = ["can meet my high requirements for", "performs well regarding", "is well rated for"]
+        explanation = "I recommend this phone because<b> I have {0} by myself</b> and think it {1} {2} and {3}.".format(
             random.choice(slot_my), random.choice(slot_reason),
             attr_to_name(topkey1), attr_to_name(topkey2))
     if explanation_type == 0:
@@ -475,14 +487,16 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
             phone_ids = []
             for item in other_phone:
                 phone_ids.append(item[0])
-            u_model['pool'].extend(phone_ids)
+            # 添加新的品牌到池子里面
+            u_model['new_pool'] = phone_ids
         recommended = GetRec(u_model)
         # print(recommended)
         if len(recommended['recommendation_list']) > 0:
             u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
             # 移除已经推荐的项目
             u_model['recommendation_list'] = recommended['recommendation_list'][1:]
-            u_model['pool'].remove(recommended['recommendation_list'][0])
+            if recommended['recommendation_list'][0] in u_model['pool']:
+                u_model['pool'].remove(recommended['recommendation_list'][0])
         else:
             res['text'] = "error"
             u_model['topRecommendedItem'] = u_model['pool'][0]
