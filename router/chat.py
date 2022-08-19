@@ -282,6 +282,12 @@ def attr_to_name(attr, type=1):
         return pre_the + "processor speed"
     elif attr == "displaysize":
         return pre_the + "display size"
+    elif attr == "phone_thickness":
+        return pre_the + "thickness"
+    elif attr == "phone_weight":
+        return pre_the + "weight"
+    elif attr == "phone_weight":
+        return pre_the + "weight"
     else:
         return pre_the + attr
 
@@ -327,7 +333,8 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanatio
     # Social explanations (third-party opinions)
     if explanation_type == 2:
         slot_customers = ["Most", "Some", "Many"]
-        slot_think = ["who have similar preferences with you think", "who bought this phone think", 'liked this phone because']
+        slot_think = ["who have similar preferences with you think", "who bought this phone think",
+                      'liked this phone because']
         explanation = "<b>{0} of our customers {1}</b> it can meet their high requirements for {2} and {3}, so I recommend this phone.".format(
             random.choice(slot_customers), random.choice(slot_think), attr_to_name(topkey1), attr_to_name(topkey2))
     if explanation_type == 3:
