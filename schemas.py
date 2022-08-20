@@ -141,13 +141,14 @@ class userMsg(Record):
 
 
 class Preference(Record):
+    explanation_style: int
+    battery: Optional[str] = None,
     brand: Optional[str] = None
     budget: Optional[int] = None
     display_size: Optional[str] = None,
-    battery: Optional[str] = None,
-    weight: Optional[str] = None
-    explanation_style: int
     preferT: datetime
+    username: Optional[str] = None
+    weight: Optional[str] = None
 
     @validator("preferT", pre=True)
     def dt_validate(cls, preferT):
