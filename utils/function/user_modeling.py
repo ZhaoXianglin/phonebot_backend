@@ -49,6 +49,7 @@ def initialize_user_preference_value_based_on_specified_preference(user_preferen
     :return:
     """
     user_preference_value_dict = {}
+    # 这里循环创建了一个字典，提到的项目设置为1
     for attr in categorical_attributes:
         if attr not in user_preference_data.keys():
             user_preference_data[attr] = []
@@ -194,8 +195,8 @@ def update_user_preference_value(updated_user_preference_value, liked_item_info,
 
     for attr in numerical_attributes:
         item_v = liked_item_info[attr]
-        value_rank, rank_total = helper.get_numerical_attribute_rank(attr, item_v)
-        value_rank = str(value_rank)
+        # value_rank, rank_total = helper.get_numerical_attribute_rank(attr, item_v)
+        value_rank = str(item_v)
         updated_user_preference_value[attr][value_rank] = updated_user_preference_value[attr][value_rank] + 1
 
     # pp.pprint(updated_user_preference_value)

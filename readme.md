@@ -13,3 +13,7 @@
 "timestamp": 1554364438665
 }
 ```
+
+> export GOOGLE_APPLICATION_CREDENTIALS="mobilephone_key.json"
+> uvicorn main:app --reload
+

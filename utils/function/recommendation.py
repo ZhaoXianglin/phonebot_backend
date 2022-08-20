@@ -50,7 +50,8 @@ def categorical_attributes_value_function(user_pref_v, item_v, attr):
 def numerical_attributes_value_function(user_pref_v, item_v, attribute):
     # step 1: find the interval that contains the item's attribute value
 
-    value_rank, rank_total = helper.get_numerical_attribute_rank(attribute, item_v)
+    value_rank = item_v
+    # rank_total = helper.get_numerical_attribute_rank(attribute, item_v)
     value_rank = str(value_rank)
 
     # step 2: compute the sum of preference value
@@ -61,7 +62,7 @@ def numerical_attributes_value_function(user_pref_v, item_v, attribute):
         return user_pref_v[value_rank] / user_pref_v_sum
     else:
         return 0
-    return 1
+    # return 1
 
 
 # ------------------------------------------------------------------
@@ -264,7 +265,7 @@ def compute_recommendation_compatibility_score(user_critique_preference, item_po
 
         if len(satisfied_critique_attribute_list) > 0:
             item_compatibility_score = len(satisfied_critique_attribute_list) / (
-                        len(satisfied_critique_attribute_list) + len(unsatisfied_critique_attribute_list))
+                    len(satisfied_critique_attribute_list) + len(unsatisfied_critique_attribute_list))
         item_compatibility_score_dict[item_id] = item_compatibility_score
 
     # pp.pprint(item_compatibility_score_dict)
@@ -322,7 +323,8 @@ def update_recommendation_pool(user_preference_model, user_critique_preference, 
                                max_item_pool_number, categorical_attributes, numerical_attributes, method, alpha):
     sorted_estimated_score_dict = compute_recommendation(user_preference_model, user_critique_preference,
                                                          integrated_item_pool, len(integrated_item_pool),
-                                                         categorical_attributes, numerical_attributes, method, alpha)
+                                                         categorical_attributes, numerical_attributes, method, 'id',
+                                                         alpha)
 
     integrated_item_pool_dict = {}
     new_item_pool_dict = {}
