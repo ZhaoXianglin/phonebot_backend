@@ -262,25 +262,34 @@ def row2dict(row):
     return d
 
 
-def attr_to_name(attr):
+def attr_to_name(attr, type=1):
+    pre_the = " "
+    if type == 1:
+        pre_the = 'the '
     if attr == 'nettech':
-        return "the cellular network"
+        return pre_the + "cellular network"
     elif attr == "os1":
-        return 'the OS'
+        return pre_the + 'OS'
     elif attr == "nfc":
-        return 'the NFC'
+        return pre_the + 'NFC'
     elif attr == "fullscreen":
-        return "the screen"
+        return pre_the + "screen"
     elif attr == "phone_size":
-        return "the size"
+        return pre_the + "phone size"
     elif attr == "year":
-        return "the release time"
+        return pre_the + "release time"
     elif attr == "cpu":
-        return "the processor speed"
+        return pre_the + "processor speed"
     elif attr == "displaysize":
-        return "the display size"
+        return pre_the + "display size"
+    elif attr == "phone_thickness":
+        return pre_the + "thickness"
+    elif attr == "phone_weight":
+        return pre_the + "weight"
+    elif attr == "phone_weight":
+        return pre_the + "weight"
     else:
-        return 'the ' + attr
+        return pre_the + attr
 
 
 def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanation_type):
@@ -316,19 +325,22 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanatio
     explanation = ""
     # Non-social explanations
     if explanation_type == 1:
-        explanation = "I recommend this phone because it " + getValueRange(topkey1,
-                                                                           topvalue1) + " and it" + getValueRange(
-            topkey2, topvalue2) + "."
+        explanation1 = "I recommend this phone because it can meet the high requirements of {0} and {1}.".format(
+            attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
+        explanation2 = "It can meet the high requirements of {0} and {1}, so this phone might fit you well.".format(
+            attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
+        explanation = random.choice([explanation1, explanation2])
     # Social explanations (third-party opinions)
     if explanation_type == 2:
         slot_customers = ["Most", "Some", "Many"]
-        slot_think = ["have similar preferences with you think", "bought this phone think", 'liked this phone because']
-        explanation = "{0} of our customers who {1} it can meet their high requirements for {2} and {3}, so I recommend this phone.".format(
+        slot_think = ["who have similar preferences with you think", "who bought this phone think",
+                      'liked this phone because']
+        explanation = "<b>{0} of our customers {1}</b> it can meet their high requirements for {2} and {3}, so I recommend this phone.".format(
             random.choice(slot_customers), random.choice(slot_think), attr_to_name(topkey1), attr_to_name(topkey2))
     if explanation_type == 3:
         slot_my = ["tried it out", "tested it", "compared it with other phones"]
-        slot_reason = ["meet my high requirement for", "performs well regarding", "is well rated for"]
-        explanation = "I recommend this phone because I have {0} by myself and think it {1} {2} and {3}.".format(
+        slot_reason = ["can meet my high requirements for", "performs well regarding", "is well rated for"]
+        explanation = "I recommend this phone because<b> I have {0} by myself</b> and think it {1} {2} and {3}.".format(
             random.choice(slot_my), random.choice(slot_reason),
             attr_to_name(topkey1), attr_to_name(topkey2))
     if explanation_type == 0:
