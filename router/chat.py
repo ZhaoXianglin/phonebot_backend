@@ -66,8 +66,8 @@ async def prefer(request: Request, page: Preference, db: Session = Depends(get_d
         # 初始化电池
         if page.battery == "Large":
             u_model["user"]["preferenceData"]["battery"] = [4499, 13201]
-        if page.battery == "Middle":
-            u_model["user"]["preferenceData"]["battery"] = [3999, 4999]
+        if page.battery == "Medium":
+            u_model["user"]["preferenceData"]["battery"] = [4000, 4999]
         if page.battery == "Small":
             u_model["user"]["preferenceData"]["battery"] = [1299, 4049]
 
@@ -308,8 +308,13 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanatio
     sortedKeyValue = sort_dict_by_value(keyAttr, True)
     # based on product attributes top two keys
     keyIndex = random.randint(0, 3)
+
     topkey1 = list(sortedKeyValue.keys())[keyIndex]
     topkey2 = list(sortedKeyValue.keys())[3 - keyIndex]
+    high = 'high'
+    if topkey1 in ['brand', 'nettech', 'os1', 'nfc', 'fullscreen'] or topkey2 in ['brand', 'nettech', 'os1', 'nfc',
+                                                                                  'fullscreen']:
+        high = 'speical'
     if topkey2 == 'camera':
         topkey2 = 'cam1'
     if topkey1 == 'camera':
@@ -325,9 +330,9 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanatio
     explanation = ""
     # Non-social explanations
     if explanation_type == 1:
-        explanation1 = "I recommend this phone because it can meet the high requirements of {0} and {1}.".format(
+        explanation1 = "I recommend this phone because it can meet the " + high + " requirement of {0} and {1}.".format(
             attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
-        explanation2 = "This phone can meet the high requirements of {0} and {1}, so it might fit you well.".format(
+        explanation2 = "This phone can meet the " + high + " requirement of {0} and {1}, so it might fit you well.".format(
             attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
         explanation = random.choice([explanation1, explanation2])
     # Social explanations (third-party opinions)
@@ -335,11 +340,12 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanatio
         slot_customers = ["Most", "Some", "Many"]
         slot_think = ["who have similar preferences with you think", "who bought this phone think",
                       'liked this phone because']
-        explanation = "<b>{0} of our customers {1}</b> it can meet their high requirements for {2} and {3}, so I recommend this phone.".format(
-            random.choice(slot_customers), random.choice(slot_think), attr_to_name(topkey1), attr_to_name(topkey2))
+        explanation = "<b>{0} of our customers {1}</b> it can meet their {2} requirement for {3} and {4}, so I recommend this phone.".format(
+            random.choice(slot_customers), random.choice(slot_think), high, attr_to_name(topkey1, 0),
+            attr_to_name(topkey2, 0))
     if explanation_type == 3:
         slot_my = ["tried it out", "tested it", "compared it with other phones"]
-        slot_reason = ["can meet my high requirements for", "performs well regarding", "is well rated for"]
+        slot_reason = ["can meet my " + high + " requirement for", "performs well regarding", "is well rated for"]
         explanation = "I recommend this phone because<b> I have {0} by myself</b> and think it {1} {2} and {3}.".format(
             random.choice(slot_my), random.choice(slot_reason),
             attr_to_name(topkey1), attr_to_name(topkey2))
