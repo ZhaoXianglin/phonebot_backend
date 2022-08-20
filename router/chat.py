@@ -327,7 +327,7 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanatio
     if explanation_type == 1:
         explanation1 = "I recommend this phone because it can meet the high requirements of {0} and {1}.".format(
             attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
-        explanation2 = "It can meet the high requirements of {0} and {1}, so this phone might fit you well.".format(
+        explanation2 = "This phone can meet the high requirements of {0} and {1}, so it might fit you well.".format(
             attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
         explanation = random.choice([explanation1, explanation2])
     # Social explanations (third-party opinions)
