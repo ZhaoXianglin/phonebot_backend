@@ -161,7 +161,8 @@ class Preference(Record):
 
 class Page2(Record):
     page2T: datetime
-    phonelist: list
+    cart: str
+    log: str
 
     @validator("page2T", pre=True)
     def dt_validate(cls, page2T):
