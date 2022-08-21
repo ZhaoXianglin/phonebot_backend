@@ -279,15 +279,19 @@ def attr_to_name(attr, type=1):
     elif attr == "year":
         return pre_the + "release time"
     elif attr == "cpu":
-        return pre_the + "processor speed"
+        return pre_the + "processing speed"
+    elif attr == "ram":
+        return pre_the + "memory"
     elif attr == "displaysize":
-        return pre_the + "display size"
+        return pre_the + "screen size"
     elif attr == "phone_thickness":
         return pre_the + "thickness"
     elif attr == "phone_weight":
         return pre_the + "weight"
-    elif attr == "phone_weight":
-        return pre_the + "weight"
+    elif attr == "phone_size":
+        return pre_the + "body size"
+    elif attr == "battery":
+        return pre_the + "battery life"
     else:
         return pre_the + attr
 
@@ -307,10 +311,19 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanatio
     # print(keyAttr)
     sortedKeyValue = sort_dict_by_value(keyAttr, True)
     # based on product attributes top two keys
-    keyIndex = random.randint(0, 3)
+    # 去掉 categorical的属性
+    categorical_attributes = ['brand', 'nettech', 'os1', 'nfc', 'fullscreen', 'year']
+    keep_items = []
+    for item in sortedKeyValue.keys():
+        if item not in categorical_attributes:
+            keep_items.append(item)
+    topkey1 = keep_items[0]
+    topkey2 = keep_items[1]
 
-    topkey1 = list(sortedKeyValue.keys())[keyIndex]
-    topkey2 = list(sortedKeyValue.keys())[3 - keyIndex]
+    # topvalue1 = currentItem[topkey1]
+    # topvalue2 = currentItem[topkey2]
+    # print(topvalue1, topvalue2, explanation_type)
+
     high = 'high'
     if topkey1 in ['brand', 'nettech', 'os1', 'nfc', 'fullscreen'] or topkey2 in ['brand', 'nettech', 'os1', 'nfc',
                                                                                   'fullscreen']:
@@ -324,9 +337,6 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanatio
     if topkey2 == 'fullscreen':
         topkey2 = 'displaysize'
 
-    topvalue1 = currentItem[topkey1]
-    topvalue2 = currentItem[topkey2]
-    print(topvalue1, topvalue2, explanation_type)
     explanation = ""
     # Non-social explanations
     if explanation_type == 1:
@@ -345,7 +355,7 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanatio
             attr_to_name(topkey2, 0))
     if explanation_type == 3:
         slot_my = ["tried it out", "tested it", "compared it with other phones"]
-        slot_reason = ["can meet my " + high + " requirement for", "performs well regarding", "is well rated for"]
+        slot_reason = ["can meet my " + high + " requirement for", "can fulfil my need for", "is well rated for"]
         explanation = "I recommend this phone because<b> I have {0} by myself</b> and think it {1} {2} and {3}.".format(
             random.choice(slot_my), random.choice(slot_reason),
             attr_to_name(topkey1), attr_to_name(topkey2))

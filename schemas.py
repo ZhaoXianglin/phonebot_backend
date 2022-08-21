@@ -233,6 +233,7 @@ class Que2(Record):
     intent2purchase2: int
     intent2purchase3: int
 
+    atten_chk1: int
     que2T: datetime
 
     @validator("que2T", pre=True)
@@ -241,6 +242,17 @@ class Que2(Record):
 
 
 class Que3(Record):
+    openended1: str
+    openended2: str
+
+    que3T: datetime
+
+    @validator("que3T", pre=True)
+    def dt_validate(cls, que3T):
+        return datetime.fromtimestamp(que3T / 1000)
+
+
+class Que4(Record):
     accuracy4: int
     explain2: int
     social_presence3: int
@@ -280,17 +292,7 @@ class Que3(Record):
     cui_positive3: int
     cui_rapport2: int
 
-    que3T: datetime
-
-    @validator("que3T", pre=True)
-    def dt_validate(cls, que3T):
-        return datetime.fromtimestamp(que3T / 1000)
-
-
-class Que4(Record):
-    openended1: str
-    openended2: str
-
+    atten_chk2: int
     que4T: datetime
 
     @validator("que4T", pre=True)
