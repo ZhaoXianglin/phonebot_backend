@@ -358,7 +358,7 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanatio
         slot_reason = ["can meet my " + high + " requirement for", "can fulfil my need for", "is well rated for"]
         explanation = "I recommend this phone because<b> I have {0} by myself</b> and think it {1} {2} and {3}.".format(
             random.choice(slot_my), random.choice(slot_reason),
-            attr_to_name(topkey1), attr_to_name(topkey2))
+            attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
     if explanation_type == 0:
         msgs = ['I find this phone for you.', 'You may like this phone.', 'Please check this phone.']
         explanation = random.choice(msgs)
