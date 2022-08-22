@@ -35,16 +35,16 @@ def accept(user: Accept, db: Session = Depends(get_db)):
     # 更新条件
     if db_user.id % 4 == 0:
         db_user.identity_cue = 0
-        db_user.explanation_style = 0
+        db_user.explanation_style = 1
     if db_user.id % 4 == 1:
         db_user.identity_cue = 0
-        db_user.explanation_style = 3
+        db_user.explanation_style = 2
     if db_user.id % 4 == 2:
         db_user.identity_cue = 1
-        db_user.explanation_style = 0
+        db_user.explanation_style = 1
     if db_user.id % 4 == 3:
         db_user.identity_cue = 1
-        db_user.explanation_style = 3
+        db_user.explanation_style = 2
     # if db_user.id % 8 == 0:
     #     db_user.identity_cue = 0
     #     db_user.explanation_style = 0

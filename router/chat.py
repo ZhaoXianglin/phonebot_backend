@@ -204,56 +204,6 @@ def sort_dict_by_value(d, reverse=False):
     return dict(sorted(d.items(), key=lambda x: x[1], reverse=reverse))
 
 
-def getValueRange(key, value):
-    # TODO: judge the range of the key
-    explanation_value = ""
-    if key == "nettech" or key == "os1":
-        explanation_value = " supports " + value
-    elif key == "nfc" or key == "fullscreen":
-        explanation_value = " supports " + key
-    elif key == "brand":
-        explanation_value = " is made by " + value
-        print(explanation_value)
-    elif key == "year":
-        # TODO: this value need to be checked again
-        if int(value[:4]) > 3:
-            explanation_value = " is one of the latest mobile phone released this year."
-        else:
-            explanation_value = " may has a discount although it is not the latest phone."
-    elif key == "phone_size":
-        if float(value) > 3:
-            explanation_value = " has a large size."
-        else:
-            explanation_value = " has a small size."
-    elif key == "phone_weight":
-        if float(value) > 3:
-            explanation_value = " looks heavy."
-        else:
-            explanation_value = " is lightweight."
-    elif key == "camera":
-        if float(value) > 3:
-            explanation_value = " has decent cameras."
-        else:
-            explanation_value = " has cameras that can meet daily requirements."
-    elif key == "storage":
-        if float(value) > 3:
-            explanation_value = " has a larger storage space."
-        else:
-            explanation_value = " has a relatively small storage space."
-    elif key == "ram":
-        if float(value) > 3:
-            explanation_value = " has a larger internal storage."
-        else:
-            explanation_value = " has a modest internal storage."
-    elif key == "price":
-        if float(value) > 3:
-            explanation_value = " is more advanced but also costs more money."
-        else:
-            explanation_value = " has a lower price."
-
-    return explanation_value
-
-
 def row2dict(row):
     d = {}
     for column in row.__table__.columns:
@@ -294,6 +244,37 @@ def attr_to_name(attr, type=1):
         return pre_the + "battery life"
     else:
         return pre_the + attr
+
+
+"""
+['phone_size', 'phone_weight', 'camera', 'storage', 'ram', 'price', 'year', 'cpu', 'battery',
+                        'displaysize', 'phone_thickness']
+"""
+
+
+def attr_to_name_new(attr):
+    if attr == 'phone_size':
+        return "body size (slim)"
+    elif attr == "phone_weight":
+        return "weight (light)"
+    elif attr == "camera":
+        return "cameras"
+    elif attr == "storage":
+        return "storage space"
+    elif attr == "ram":
+        return "memory"
+    elif attr == "price":
+        return "price"
+    elif attr == "cpu":
+        return "processing speed"
+    elif attr == "battery":
+        return "standby time"
+    elif attr == "displaysize":
+        return "screen size"
+    elif attr == "phone_thickness":
+        return "thickness (thin)"
+    else:
+        return attr
 
 
 def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanation_type):
@@ -340,10 +321,14 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanatio
     explanation = ""
     # Non-social explanations
     if explanation_type == 1:
-        explanation1 = "I recommend this phone because it can meet the " + high + " requirement of {0} and {1}.".format(
-            attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
-        explanation2 = "This phone can meet the " + high + " requirement of {0} and {1}, so it might fit you well.".format(
-            attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
+        explanation1 = "I recommend this phone because it is highly ranked for {0} and {1} <b>among 150 phones in the recommendation pool</b>.".format(
+            attr_to_name_new(topkey1), attr_to_name_new(topkey2))
+        explanation2 = "This phone ranks high for {0} and {1} <b>among 150 phones in the recommendation pool</b>, so I recommend it.".format(
+            attr_to_name_new(topkey1), attr_to_name_new(topkey2))
+        # explanation1 = "I recommend this phone because it can meet the " + high + " requirement of {0} and {1}.".format(
+        #   attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
+        # explanation2 = "This phone can meet the " + high + " requirement of {0} and {1}, so it might fit you well.".format(
+        #  attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
         explanation = random.choice([explanation1, explanation2])
     # Social explanations (third-party opinions)
     if explanation_type == 2:
@@ -363,6 +348,43 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanatio
         msgs = ['I find this phone for you.', 'You may like this phone.', 'Please check this phone.']
         explanation = random.choice(msgs)
     return explanation
+
+
+def getValueRange(key, value):
+    # TODO: judge the range of the key
+    explanation_value = ""
+    if key == "phone_size":
+        if float(value) >= 3:
+            explanation_value = " has a large size."
+        else:
+            explanation_value = " has a small size."
+    elif key == "phone_weight":
+        if float(value) > 3:
+            explanation_value = " looks heavy."
+        else:
+            explanation_value = " is lightweight."
+    elif key == "camera":
+        if float(value) > 3:
+            explanation_value = " has decent cameras."
+        else:
+            explanation_value = " has cameras that can meet daily requirements."
+    elif key == "storage":
+        if float(value) > 3:
+            explanation_value = " has a larger storage space."
+        else:
+            explanation_value = " has a relatively small storage space."
+    elif key == "ram":
+        if float(value) > 3:
+            explanation_value = " has a larger internal storage."
+        else:
+            explanation_value = " has a modest internal storage."
+    elif key == "price":
+        if float(value) > 3:
+            explanation_value = " is more advanced but also costs more money."
+        else:
+            explanation_value = " has a lower price."
+
+    return explanation_value
 
 
 def geneExpBasedOnCrit(user_critique_preference):
