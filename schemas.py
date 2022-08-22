@@ -115,6 +115,7 @@ class tutorPage(Record):
 
 
 class Page1(Record):
+    prolific_id: str
     gender: str
     age: str
     nationality: str

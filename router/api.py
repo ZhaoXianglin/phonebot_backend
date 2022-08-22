@@ -33,30 +33,42 @@ def accept(user: Accept, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_user)
     # 更新条件
-    if db_user.id % 8 == 0:
+    if db_user.id % 4 == 0:
         db_user.identity_cue = 0
         db_user.explanation_style = 0
-    if db_user.id % 8 == 1:
-        db_user.identity_cue = 0
-        db_user.explanation_style = 1
-    if db_user.id % 8 == 2:
-        db_user.identity_cue = 0
-        db_user.explanation_style = 2
-    if db_user.id % 8 == 3:
+    if db_user.id % 4 == 1:
         db_user.identity_cue = 0
         db_user.explanation_style = 3
-    if db_user.id % 8 == 4:
+    if db_user.id % 4 == 2:
         db_user.identity_cue = 1
         db_user.explanation_style = 0
-    if db_user.id % 8 == 5:
-        db_user.identity_cue = 1
-        db_user.explanation_style = 1
-    if db_user.id % 8 == 6:
-        db_user.identity_cue = 1
-        db_user.explanation_style = 2
-    if db_user.id % 8 == 7:
+    if db_user.id % 4 == 3:
         db_user.identity_cue = 1
         db_user.explanation_style = 3
+    # if db_user.id % 8 == 0:
+    #     db_user.identity_cue = 0
+    #     db_user.explanation_style = 0
+    # if db_user.id % 8 == 1:
+    #     db_user.identity_cue = 0
+    #     db_user.explanation_style = 1
+    # if db_user.id % 8 == 2:
+    #     db_user.identity_cue = 0
+    #     db_user.explanation_style = 2
+    # if db_user.id % 8 == 3:
+    #     db_user.identity_cue = 0
+    #     db_user.explanation_style = 3
+    # if db_user.id % 8 == 4:
+    #     db_user.identity_cue = 1
+    #     db_user.explanation_style = 0
+    # if db_user.id % 8 == 5:
+    #     db_user.identity_cue = 1
+    #     db_user.explanation_style = 1
+    # if db_user.id % 8 == 6:
+    #     db_user.identity_cue = 1
+    #     db_user.explanation_style = 2
+    # if db_user.id % 8 == 7:
+    #     db_user.identity_cue = 1
+    #     db_user.explanation_style = 3
     db.commit()
     db.refresh(db_user)
     res = IdRecord(uuid=db_user.uuid, id=db_user.id, identity_cue=db_user.identity_cue,
