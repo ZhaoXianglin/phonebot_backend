@@ -201,7 +201,7 @@ class Que1(Record):
     useful4: int
 
     check1: int
-    check2: int
+    # check2: int
 
     @validator("que1T", pre=True)
     def dt_validate(cls, que1T):
