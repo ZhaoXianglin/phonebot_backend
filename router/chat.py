@@ -78,7 +78,9 @@ async def prefer(request: Request, page: Preference, db: Session = Depends(get_d
         # u_model["user"]["preferenceData"]["camera"] = [int(page.cameras), 108]
         # 更新计算后的用户模型
         u_model = InitializeUserModel(u_model)
-        print(u_model["user"]["user_preference_model"]["attribute_frequency"])
+        # print(u_model["user"]["user_preference_model"]["attribute_frequency"])
+        if page.brand in ['Apple', 'Samsung', 'Huawei']:
+            u_model["user"]["user_preference_model"]["attribute_frequency"]["brand"] += 1
         if len(page.weight) > 2:
             u_model["user"]["user_preference_model"]["attribute_frequency"]["phone_weight"] += 1
         if len(page.displaysize) > 2:
@@ -93,9 +95,9 @@ async def prefer(request: Request, page: Preference, db: Session = Depends(get_d
         # 将模型redis持久化
         # print(u_model)
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
-        resmsg1, resmsg2 = geneExpBasedOnProductFeatures(u_model['user']['user_preference_model'], resphone,
-                                                         page.explanation_style)
-        return {'status': 1, 'msg': resmsg1, 'phone': resphone}
+        resmsg = geneExpForUserInput(u_model['user']['user_preference_model'], resphone,
+                                     page.explanation_style)
+        return {'status': 1, 'msg': resmsg, 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
@@ -148,11 +150,11 @@ async def update_model(request: Request, page: LoggerModel, db: Session = Depend
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
         # print(u_model, "=========after===========")
         resphone = recommendPhone(u_model['topRecommendedItem'])
-        resmsg1, resmsg2 = geneExpBasedOnProductFeatures(u_model['user']['user_preference_model'], resphone,
-                                                         page.explanation_style, page.phone)
-        if len(resmsg1) < 2:
-            resmsg1 = "I didn't find an appropriate phone for you, maybe you can try this one."
-        return {'status': 1, 'msg': [resmsg1, resmsg2], 'phone': resphone}
+        resmsg = geneExpForNextItem(u_model['user']['user_preference_model'],
+                                    page.explanation_style, resphone, page.phone)
+        if len(resmsg) < 2:
+            resmsg = "I didn't find an appropriate phone for you, maybe you can try this one."
+        return {'status': 1, 'msg': resmsg, 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
@@ -199,9 +201,9 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
         # 将模型redis持久化
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
         resphone = recommendPhone(u_model['topRecommendedItem'])
-        resmsg1, resmsg2 = geneExpBasedOnProductFeatures(u_model['user']['user_preference_model'], resphone,
-                                                         page.explanation_style, page.phone)
-        return {'status': 1, 'msg': [resmsg1, resmsg2], 'phone': resphone}
+        resmsg = geneExpForUserInput(u_model['user']['user_preference_model'], resphone,
+                                     page.explanation_style)
+        return {'status': 1, 'msg': resmsg, 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
@@ -432,6 +434,121 @@ def getValueRange(key, value1, value2):
     return explanation_value, compare_res
 
 
+def getValueRangeForNonSocial(key, value1, value2):
+    """
+    :param key: 比较的属性
+    :param value1: 旧手机的属性
+    :param value2: 新手机的值
+    :return: 解释
+    """
+    compare_res = ''
+    if key == "phone_size":
+        if float(value1) == float(value2):
+            explanation_value = "the same body size"
+            compare_res = 'same'
+        elif float(value1) < float(value2):
+            explanation_value = "a larger body size"
+            compare_res = 'low'
+        else:
+            explanation_value = "a smaller body size"
+            compare_res = 'high'
+
+    elif key == "phone_weight":
+        if float(value1) == float(value2):
+            explanation_value = "the same weight"
+            compare_res = 'same'
+        elif float(value1) < float(value2):
+            explanation_value = "a heavier weight"
+            compare_res = 'low'
+        else:
+            explanation_value = "a lighter weight"
+            compare_res = 'high'
+    elif key == "camera":
+        if float(value1) == float(value2):
+            explanation_value = "the same camera specs"
+            compare_res = 'same'
+        elif float(value1) < float(value2):
+            explanation_value = "a batter camera"
+            compare_res = 'high'
+        else:
+            explanation_value = "a worse camera"
+            compare_res = 'low'
+    elif key == "storage":
+        if float(value1) == float(value2):
+            explanation_value = "the same storage space"
+            compare_res = 'same'
+        elif float(value1) < float(value2):
+            explanation_value = "a higher storage"
+            compare_res = 'high'
+        else:
+            explanation_value = "a lower storage"
+            compare_res = 'low'
+    elif key == "ram":
+        if float(value1) == float(value2):
+            explanation_value = "the same RAM size"
+            compare_res = ''
+        elif float(value1) < float(value2):
+            explanation_value = "a larger RAM size"
+            compare_res = 'high'
+        else:
+            explanation_value = "a larger RAM size"
+            compare_res = 'low'
+    elif key == "price":
+        if float(value1) == float(value2):
+            explanation_value = "the same price"
+            compare_res = 'same'
+        elif float(value1) < float(value2):
+            explanation_value = "a higher price"
+            compare_res = 'low'
+        else:
+            explanation_value = "a lower price"
+            compare_res = 'high'
+    elif key == "cpu":
+        if float(value1) == float(value2):
+            explanation_value = "the same processing power"
+            compare_res = 'same'
+        elif float(value1) < float(value2):
+            explanation_value = "a faster processing speed"
+            compare_res = 'high'
+        else:
+            explanation_value = "A slower processing speed"
+            compare_res = 'low'
+    elif key == "battery":
+        if float(value1) == float(value2):
+            explanation_value = "the same battery capacity"
+            compare_res = 'same'
+        elif float(value1) < float(value2):
+            explanation_value = "a larger battery capacity"
+            compare_res = 'high'
+        else:
+            explanation_value = "a lower battery capacity"
+            compare_res = 'low'
+    elif key == "displaysize":
+        if float(value1) == float(value2):
+            explanation_value = "the same screen size"
+            compare_res = 'same'
+        elif float(value1) < float(value2):
+            explanation_value = "a larger screen size"
+            compare_res = 'high'
+        else:
+            explanation_value = "a smaller screen size"
+            compare_res = 'low'
+    elif key == "phone_thickness":
+        if float(value1) == float(value2):
+            explanation_value = "the same body thickness"
+            compare_res = 'same'
+        elif float(value1) < float(value2):
+            explanation_value = "a thicker body"
+            compare_res = 'low'
+        else:
+            explanation_value = "a slimmer body "
+            compare_res = 'high'
+    else:
+        # 如果没有匹配的话
+        explanation_value = "a better preference"
+    return explanation_value, compare_res
+
+
 # 比较适当的属性
 def best_attr(phone1, phone2):
     """
@@ -483,7 +600,7 @@ def best_attr(phone1, phone2):
 
 def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanation_type, oldItem=None):
     """
-    生成推荐的解释
+    生成推荐的解释 已经废弃
     :param user_preference_model:
     :param currentItem:
     :param explanation_type:1是 Non-social explanations 2是 Non-social explanations 3 是Social explanations (personal opinions)
@@ -495,6 +612,10 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanatio
     # print("关键属性", keyAttr)
     # print(keyAttr)
     sortedKeyValue = sort_dict_by_value(keyAttr, True)
+    # 增加对brand 的解释
+    brand_mark = False
+    if sortedKeyValue.keys()[0] == 'brand' or sortedKeyValue.keys()[1] == 'brand':
+        brand_mark = True
     # based on product attributes top two keys
     # 去掉 categorical的属性
     categorical_attributes = ['brand', 'nettech', 'os1', 'nfc', 'fullscreen', 'year']
@@ -539,24 +660,38 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanatio
     if explanation_type == 1:
         # 获得排名情况
         res = rank_phone(attr1, currentItem[attr1], attr2, currentItem[attr2])
-        print(res, topkey1, topkey2)
-        explanation = "I recommend this phone because it ranks top {0}% for <b>{1}</b> and top {2}% for <b>{3}</b> among 1200 phones in our product library.".format(
-            res[0], attr_to_name_new(topkey1), res[1], attr_to_name_new(topkey2))
+        if brand_mark:
+            explanation = "I recommend this phone because the brand is popular and it ranks top {0}% for <b>{1}</b> and top {2}% for <b>{3}</b> among 1265 phones in our product library.".format(
+                res[0], attr_to_name_new(topkey1), res[1], attr_to_name_new(topkey2))
+        else:
+            explanation = "I recommend this phone because it ranks top {0}% for <b>{1}</b> and top {2}% for <b>{3}</b> among 1265 phones in our product library.".format(
+                res[0], attr_to_name_new(topkey1), res[1], attr_to_name_new(topkey2))
 
     # Social explanations (third-party opinions)
     if explanation_type == 2:
         slot_customers = ["Most", "Some", "Many"]
         slot_think = ["who have similar preferences with you think", "who bought this phone think",
                       'liked this phone because']
-        explanation = "{0} of our customers {1} it can meet their {2} requirement for <b>{3}</b> and <b>{4}</b>, so I recommend this phone.".format(
-            random.choice(slot_customers), random.choice(slot_think), high, attr_to_name(topkey1, 0),
-            attr_to_name(topkey2, 0))
+        if brand_mark:
+            explanation = "{0} of our customers {1} it can meet their {2} requirement for <b>brand</b>, <b>{3}</b> and <b>{4}</b>, so I recommend this phone.".format(
+                random.choice(slot_customers), random.choice(slot_think), high, attr_to_name(topkey1, 0),
+                attr_to_name(topkey2, 0))
+        else:
+            explanation = "{0} of our customers {1} it can meet their {2} requirement for <b>{3}</b> and <b>{4}</b>, so I recommend this phone.".format(
+                random.choice(slot_customers), random.choice(slot_think), high, attr_to_name(topkey1, 0),
+                attr_to_name(topkey2, 0))
+
     if explanation_type == 3:
         slot_my = ["tried it out", "tested it", "compared it with other phones"]
         slot_reason = ["can meet my " + high + " requirement for", "can fulfil my need for"]
-        explanation = "I recommend this phone becauseI have {0} by myself and think it {1} <b>{2}</b> and <b>{3}</b>.".format(
-            random.choice(slot_my), random.choice(slot_reason),
-            attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
+        if brand_mark:
+            explanation = "I recommend this phone becauseI have {0} by myself and think it {1} <b>brand</b>, <b>{2}</b> and <b>{3}</b>.".format(
+                random.choice(slot_my), random.choice(slot_reason),
+                attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
+        else:
+            explanation = "I recommend this phone becauseI have {0} by myself and think it {1} <b>{2}</b> and <b>{3}</b>.".format(
+                random.choice(slot_my), random.choice(slot_reason),
+                attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
     if explanation_type == 0:
         msgs = ['I find this phone for you.', 'You may like this phone.', 'Please check this phone.']
         explanation = random.choice(msgs)
@@ -718,3 +853,198 @@ def rank_phone(attr1, val1, attr2, val2):
 
 def cal_better_range(val1, val2):
     return round(((float(val2) - float(val1)) / float(val1)) * 100, 2)
+
+
+"""
+Explanation for `init` and `sendMessage`
+"""
+
+
+def geneExpForUserInput(user_preference_model, currentItem, explanation_type):
+    """
+    生成初始推荐和用户输入推荐的解释
+    :param user_preference_model:
+    :param currentItem:
+    :param explanation_type:1是 Non-social explanations 2是 Non-social explanations 3 是Social explanations (personal opinions)
+    :return:
+    """
+    currentItem = row2dict(currentItem)
+
+    keyAttr = user_preference_model['attribute_frequency']
+    # print("关键属性", keyAttr)
+    # print(keyAttr)
+    sortedKeyValue = sort_dict_by_value(keyAttr, True)
+    # 增加对brand 的解释
+    brand_mark = False
+    if list(sortedKeyValue.keys())[0] == 'brand':
+        brand_mark = True
+    # based on product attributes top two keys
+    # 去掉 categorical的属性
+    categorical_attributes = ['brand', 'nettech', 'os1', 'nfc', 'fullscreen', 'year']
+    keep_items = []
+    for item in sortedKeyValue.keys():
+        if item not in categorical_attributes:
+            keep_items.append(item)
+    topkey1 = keep_items[0]
+    # 第二个属性任选
+    topkey2 = random.choice(keep_items[1:])
+    high = 'high'
+
+    if topkey1 == 'fullscreen':
+        topkey1 = 'displaysize'
+    if topkey2 == 'fullscreen':
+        topkey2 = 'displaysize'
+
+    attr1 = topkey1
+    attr2 = topkey2
+    if topkey1 == 'phone_size':
+        attr1 = 'd1'
+    if topkey2 == 'phone_size':
+        attr2 = 'd1'
+    if topkey1 == 'phone_weight':
+        attr1 = 'weight'
+    if topkey2 == 'phone_weight':
+        attr2 = 'weight'
+    if topkey1 == 'camera':
+        attr1 = 'cam1'
+    if topkey2 == 'camera':
+        attr2 = 'cam1'
+
+    explanation = ""
+    # Non-social explanations
+    # Non-social explanations
+    if explanation_type == 1:
+        # 获得排名情况
+        res = rank_phone(attr1, currentItem[attr1], attr2, currentItem[attr2])
+        if brand_mark:
+            explanation = "I recommend this phone because the brand is popular and it ranks top {0}% for <b>{1}</b> and top {2}% for <b>{3}</b> among 1265 phones in our product library.".format(
+                res[0], attr_to_name_new(topkey1), res[1], attr_to_name_new(topkey2))
+        else:
+            explanation = "I recommend this phone because it ranks top {0}% for <b>{1}</b> and top {2}% for <b>{3}</b> among 1265 phones in our product library.".format(
+                res[0], attr_to_name_new(topkey1), res[1], attr_to_name_new(topkey2))
+
+    # Social explanations (third-party opinions)
+    if explanation_type == 2:
+        slot_customers = ["Most", "Some", "Many"]
+        slot_think = ["who have similar preferences with you think", "who bought this phone think",
+                      'liked this phone because']
+        if brand_mark:
+            high = "special"
+            explanation = "<i>{0} of our customers</i> {1} it can meet their {2} requirement for <b>brand</b>, <b>{3}</b> and <b>{4}</b>, so I recommend this phone.".format(
+                random.choice(slot_customers), random.choice(slot_think), high, attr_to_name(topkey1, 0),
+                attr_to_name(topkey2, 0))
+        else:
+            explanation = "<i>{0} of our customers</i> {1} it can meet their {2} requirement for <b>{3}</b> and <b>{4}</b>, so I recommend this phone.".format(
+                random.choice(slot_customers), random.choice(slot_think), high, attr_to_name(topkey1, 0),
+                attr_to_name(topkey2, 0))
+
+    if explanation_type == 3:
+        slot_my = ["tried it out", "tested it", "compared it with other phones"]
+        slot_reason = ["can meet my " + high + " requirement for", "can fulfil my need for"]
+        if brand_mark:
+            high = 'special'
+            slot_reason = ["can meet my " + high + " requirement for", "can fulfil my need for"]
+            explanation = "I recommend this phone because <i>I have {0} by myself</i> and think it {1} <b>brand</b>, <b>{2}</b> and <b>{3}</b>.".format(
+                random.choice(slot_my), random.choice(slot_reason),
+                attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
+        else:
+            explanation = "I recommend this phone because <i>I have {0} by myself</i> and think it {1} <b>{2}</b> and <b>{3}</b>.".format(
+                random.choice(slot_my), random.choice(slot_reason),
+                attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
+    if explanation_type == 0:
+        msgs = ['I find this phone for you.', 'You may like this phone.', 'Please check this phone.']
+        explanation = random.choice(msgs)
+    return explanation
+
+
+def geneExpForNextItem(user_preference_model, explanation_type, currentItem, oldItem):
+    """
+    生成Next item推荐的比较解释
+    :param user_preference_model:
+    :param currentItem:
+    :param explanation_type:1是 Non-social explanations 2是 Non-social explanations 3 是Social explanations (personal opinions)
+    :return:
+    """
+    # print(currentItem)
+    currentItem = row2dict(currentItem)
+
+    keyAttr = user_preference_model['attribute_frequency']
+    # print("关键属性", keyAttr)
+    # print(keyAttr)
+    sortedKeyValue = sort_dict_by_value(keyAttr, True)
+    # based on product attributes top two keys
+    # 去掉 categorical的属性
+    categorical_attributes = ['brand', 'nettech', 'os1', 'nfc', 'fullscreen', 'year']
+    keep_items = []
+    for item in sortedKeyValue.keys():
+        if item not in categorical_attributes:
+            keep_items.append(item)
+    topkey1 = keep_items[0]
+    topkey2 = best_attr(oldItem, currentItem)[0]
+    if topkey2 == topkey1:
+        topkey2 = best_attr(oldItem, currentItem)[1]
+
+    if topkey1 == 'fullscreen':
+        topkey1 = 'displaysize'
+    if topkey2 == 'fullscreen':
+        topkey2 = 'displaysize'
+
+    attr1 = topkey1
+    attr2 = topkey2
+    if topkey1 == 'phone_size':
+        attr1 = 'd1'
+    if topkey2 == 'phone_size':
+        attr2 = 'd1'
+    if topkey1 == 'phone_weight':
+        attr1 = 'weight'
+    if topkey2 == 'phone_weight':
+        attr2 = 'weight'
+    if topkey1 == 'camera':
+        attr1 = 'cam1'
+    if topkey2 == 'camera':
+        attr2 = 'cam1'
+
+    explanation = ""
+
+    # Non-social explanations
+    if explanation_type == 1:
+        compare1, compare_ras1 = getValueRangeForNonSocial(topkey1, oldItem[attr1], currentItem[attr1])
+        compare2, compare_ras2 = getValueRangeForNonSocial(topkey2, oldItem[attr2], currentItem[attr2])
+        and_but = "but"
+        if compare_ras1 == compare_ras2:
+            and_but = "and"
+        if compare_ras1 == 'high':
+            temp_val = cal_better_range(oldItem[attr1], currentItem[attr1])
+            if temp_val != 0:
+                compare1 += " ({0}%)".format(temp_val)
+        if compare_ras2 == 'high':
+            temp_val = cal_better_range(oldItem[attr2], currentItem[attr2])
+            if temp_val != 0:
+                compare2 += " ({0}%)".format(cal_better_range(oldItem[attr2], currentItem[attr2]))
+        explanation = "Compared with the previous phone, this phone has <b>{0}</b> {1} <b>{2}</b>.".format(compare1,
+                                                                                                           and_but,
+                                                                                                           compare2)
+    # Social explanations (third-party opinions)
+    if explanation_type == 2:
+        compare1, compare_ras1 = getValueRange(topkey1, oldItem[attr1], currentItem[attr1])
+        compare2, compare_ras2 = getValueRange(topkey2, oldItem[attr2], currentItem[attr2])
+        and_but = "but"
+        if compare_ras1 == compare_ras2:
+            and_but = "and"
+        explanation = "<i>According to customers' reviews</i>, compared with the {0}, this phone has <b>{1}</b> {2} <b>{3}</b>.".format(
+            oldItem['modelname'],
+            compare1,
+            and_but, compare2)
+    if explanation_type == 3:
+        compare1, compare_ras1 = getValueRange(topkey1, oldItem[attr1], currentItem[attr1])
+        compare2, compare_ras2 = getValueRange(topkey2, oldItem[attr2], currentItem[attr2])
+        and_but = "but"
+        if compare_ras1 == compare_ras2:
+            and_but = "and"
+        explanation = "<i>I have personally tested these phones</i>, compared with the {0}, this phone has <b>{1}</b> {2} <b>{3}</b>.".format(
+            oldItem['modelname'],
+            compare1,
+            and_but,
+            compare2)
+
+    return explanation

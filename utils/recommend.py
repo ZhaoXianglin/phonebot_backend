@@ -59,7 +59,7 @@ def InitializeUserModel(json_data):
 
     ### obtain initial recommendations (top 150 based on MAUT)
     initial_recommendations_list = []
-    top_K = 150
+    top_K = 200
     method = 'MAUT'
     alpha = 0.5
     topK_recommendations_score_dict = recommendation.compute_recommendation(user_preference_model,
