@@ -661,7 +661,7 @@ def geneExpBasedOnProductFeatures(user_preference_model, currentItem, explanatio
         # 获得排名情况
         res = rank_phone(attr1, currentItem[attr1], attr2, currentItem[attr2])
         if brand_mark:
-            explanation = "I recommend this phone because the brand is popular and it ranks top {0}% for <b>{1}</b> and top {2}% for <b>{3}</b> among 1265 phones in our product library.".format(
+            explanation = "I recommend this phone because <b>the brand</b> is popular and it ranks top {0}% for <b>{1}</b> and top {2}% for <b>{3}</b> among 1265 phones in our product library.".format(
                 res[0], attr_to_name_new(topkey1), res[1], attr_to_name_new(topkey2))
         else:
             explanation = "I recommend this phone because it ranks top {0}% for <b>{1}</b> and top {2}% for <b>{3}</b> among 1265 phones in our product library.".format(
