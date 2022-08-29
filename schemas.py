@@ -57,6 +57,7 @@ class BaseLogMogel(BaseModel):
 class LoggerModel(Record):
     logger: list
     explanation_style: int
+    phone: dict
     lTime: datetime
 
     @validator("lTime", pre=True)
@@ -138,6 +139,7 @@ class userMsg(Record):
     message: str
     logger: list
     explanation_style: int
+    phone: dict
     msgT: datetime
 
 
@@ -146,7 +148,7 @@ class Preference(Record):
     battery: Optional[str] = None,
     brand: Optional[str] = None
     budget: Optional[int] = None
-    display_size: Optional[str] = None,
+    displaysize: Optional[str] = None,
     preferT: datetime
     username: Optional[str] = None
     weight: Optional[str] = None
@@ -201,6 +203,7 @@ class Que1(Record):
     useful4: int
 
     check1: int
+
     # check2: int
 
     @validator("que1T", pre=True)

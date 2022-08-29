@@ -250,7 +250,7 @@ def update_user_model(user_model, user_interaction_dialog, current_recommended_i
                         continue
 
                     # preference model: attribute frequency
-                    updated_user_attribute_frequency[attr] = updated_user_attribute_frequency[attr] * 2
+                    updated_user_attribute_frequency[attr] = updated_user_attribute_frequency[attr] * 2 + 1
                     time_helper.print_current_time()
                     print("update attribute frequence: attribute (%s) - %f. " % (
                         attr, updated_user_attribute_frequency[attr]))
