@@ -154,6 +154,8 @@ async def update_model(request: Request, page: LoggerModel, db: Session = Depend
                                     page.explanation_style, resphone, page.phone)
         if len(resmsg) < 2:
             resmsg = "I didn't find an appropriate phone for you, maybe you can try this one."
+        if page.try_another_count > 1:
+            resmsg = resmsg.replace("<b>", "").replace("</b>", "")
         return {'status': 1, 'msg': resmsg, 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
@@ -203,6 +205,7 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
         resphone = recommendPhone(u_model['topRecommendedItem'])
         resmsg = geneExpForUserInput(u_model['user']['user_preference_model'], resphone,
                                      page.explanation_style)
+        resmsg = resmsg.replace("<b>", "").replace("</b>", "")
         return {'status': 1, 'msg': resmsg, 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
@@ -930,11 +933,11 @@ def geneExpForUserInput(user_preference_model, currentItem, explanation_type):
                       'liked this phone because']
         if brand_mark:
             high = "special"
-            explanation = "<i>{0} of our customers</i> {1} it can meet their {2} requirement for <b>brand</b>, <b>{3}</b> and <b>{4}</b>, so I recommend this phone.".format(
+            explanation = "<b>{0} of our customers</b> {1} it can meet their {2} requirement for <b>brand</b>, <b>{3}</b> and <b>{4}</b>, so I recommend this phone.".format(
                 random.choice(slot_customers), random.choice(slot_think), high, attr_to_name(topkey1, 0),
                 attr_to_name(topkey2, 0))
         else:
-            explanation = "<i>{0} of our customers</i> {1} it can meet their {2} requirement for <b>{3}</b> and <b>{4}</b>, so I recommend this phone.".format(
+            explanation = "<b>{0} of our customers</b> {1} it can meet their {2} requirement for <b>{3}</b> and <b>{4}</b>, so I recommend this phone.".format(
                 random.choice(slot_customers), random.choice(slot_think), high, attr_to_name(topkey1, 0),
                 attr_to_name(topkey2, 0))
 
@@ -944,11 +947,11 @@ def geneExpForUserInput(user_preference_model, currentItem, explanation_type):
         if brand_mark:
             high = 'special'
             slot_reason = ["can meet my " + high + " requirement for", "can fulfil my need for"]
-            explanation = "I recommend this phone because <i>I have {0} by myself</i> and think it {1} <b>brand</b>, <b>{2}</b> and <b>{3}</b>.".format(
+            explanation = "I recommend this phone because <b>I have {0} by myself</b> and think it {1} <b>brand</b>, <b>{2}</b> and <b>{3}</b>.".format(
                 random.choice(slot_my), random.choice(slot_reason),
                 attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
         else:
-            explanation = "I recommend this phone because <i>I have {0} by myself</i> and think it {1} <b>{2}</b> and <b>{3}</b>.".format(
+            explanation = "I recommend this phone because <b>I have {0} by myself</b> and think it {1} <b>{2}</b> and <b>{3}</b>.".format(
                 random.choice(slot_my), random.choice(slot_reason),
                 attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
     if explanation_type == 0:
@@ -1031,7 +1034,7 @@ def geneExpForNextItem(user_preference_model, explanation_type, currentItem, old
         and_but = "but"
         if compare_ras1 == compare_ras2:
             and_but = "and"
-        explanation = "<i>According to customers' reviews</i>, compared with the {0}, this phone has <b>{1}</b> {2} <b>{3}</b>.".format(
+        explanation = "<b>According to customers' reviews</b>, compared with the {0}, this phone has <b>{1}</b> {2} <b>{3}</b>.".format(
             oldItem['modelname'],
             compare1,
             and_but, compare2)
@@ -1041,7 +1044,7 @@ def geneExpForNextItem(user_preference_model, explanation_type, currentItem, old
         and_but = "but"
         if compare_ras1 == compare_ras2:
             and_but = "and"
-        explanation = "<i>I have personally tested these phones</i>, compared with the {0}, this phone has <b>{1}</b> {2} <b>{3}</b>.".format(
+        explanation = "<b>I have personally tested these phones</b>, compared with the {0}, this phone has <b>{1}</b> {2} <b>{3}</b>.".format(
             oldItem['modelname'],
             compare1,
             and_but,
