@@ -351,7 +351,7 @@ def getValueRange(key, value1, value2):
             explanation_value = "the same performance for photography"
             compare_res = 'same'
         elif float(value1) < float(value2):
-            explanation_value = "a batter performance for photography"
+            explanation_value = "a better performance for photography"
             compare_res = 'high'
         else:
             explanation_value = "a worse performance for photography"
