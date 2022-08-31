@@ -56,6 +56,7 @@ class BaseLogMogel(BaseModel):
 
 class LoggerModel(Record):
     logger: list
+    try_another_count: int
     explanation_style: int
     phone: dict
     lTime: datetime
