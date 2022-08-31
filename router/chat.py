@@ -155,7 +155,7 @@ async def update_model(request: Request, page: LoggerModel, db: Session = Depend
         if len(resmsg) < 2:
             resmsg = "I didn't find an appropriate phone for you, maybe you can try this one."
         if page.try_another_count > 1:
-            resmsg = resmsg.replace("<b>", "").replace("</b>", "")
+            resmsg = resmsg.replace("</span>", "").replace("<span style=\"font-weight: bold\">", "")
         return {'status': 1, 'msg': resmsg, 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
@@ -1034,7 +1034,7 @@ def geneExpForNextItem(user_preference_model, explanation_type, currentItem, old
         and_but = "but"
         if compare_ras1 == compare_ras2:
             and_but = "and"
-        explanation = "<b>According to customers' reviews</b>, compared with the {0}, this phone has <b>{1}</b> {2} <b>{3}</b>.".format(
+        explanation = "<span style=\"font-weight: bold\">According to customers' reviews</span>, compared with the {0}, this phone has <b>{1}</b> {2} <b>{3}</b>.".format(
             oldItem['modelname'],
             compare1,
             and_but, compare2)
@@ -1044,7 +1044,7 @@ def geneExpForNextItem(user_preference_model, explanation_type, currentItem, old
         and_but = "but"
         if compare_ras1 == compare_ras2:
             and_but = "and"
-        explanation = "<b>I have personally tested these phones</b>, compared with the {0}, this phone has <b>{1}</b> {2} <b>{3}</b>.".format(
+        explanation = "<span style=\"font-weight: bold\">I have personally tested these phones</span>, compared with the {0}, this phone has <b>{1}</b> {2} <b>{3}</b>.".format(
             oldItem['modelname'],
             compare1,
             and_but,
