@@ -121,6 +121,15 @@ class Page1(Record):
     gender: str
     age: str
     nationality: str
+
+    trust_propensity1: int
+    trust_propensity2: int
+    trust_propensity3: int
+
+    ce1: int
+    ce2: int
+    ce3: int
+
     page1T: datetime
 
     @validator("page1T", pre=True)
@@ -179,10 +188,6 @@ class Que1(Record):
     cui_human2: int
     cui_human3: int
 
-    trust_propensity1: int
-    trust_propensity2: int
-    trust_propensity3: int
-
     accuracy1: int
     accuracy2: int
     accuracy3: int
@@ -221,6 +226,7 @@ class Que2(Record):
     trust_compe1: int
     trust_compe3: int
     trust_compe4: int
+    trust_compe5: int
 
     trust_integity1: int
     trust_integity2: int

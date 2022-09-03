@@ -178,8 +178,9 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
         u_model = UpdateUserModel(u_model)
         # print(u_model, '+++++++++++++')
         # 处理品牌扩展
-        if parse_res.__contains__("brand") and parse_res.get('brand') not in u_model['user']['preferenceData']['brand']:
+        if parse_res.__contains__("brand") and parse_res.get('brand'):
             other_phone = db.query(ph_phones.id).filter(ph_phones.brand == parse_res.get('brand')).all()
+            print("----------", other_phone)
             phone_ids = []
             for item in other_phone:
                 phone_ids.append(item[0])
@@ -205,7 +206,7 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
         resphone = recommendPhone(u_model['topRecommendedItem'])
         resmsg = geneExpForUserInput(u_model['user']['user_preference_model'], resphone,
                                      page.explanation_style)
-        resmsg = resmsg.replace("<b>", "").replace("</b>", "")
+        resmsg = resmsg.replace("</span>", "").replace("<span style=\"font-weight: bold\">", "")
         return {'status': 1, 'msg': resmsg, 'phone': resphone}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
@@ -933,11 +934,11 @@ def geneExpForUserInput(user_preference_model, currentItem, explanation_type):
                       'liked this phone because']
         if brand_mark:
             high = "special"
-            explanation = "<b>{0} of our customers</b> {1} it can meet their {2} requirement for <b>brand</b>, <b>{3}</b> and <b>{4}</b>, so I recommend this phone.".format(
+            explanation = "<span style=\"font-weight: bold\">{0} of our customers</span> {1} it can meet their {2} requirement for <b>brand</b>, <b>{3}</b> and <b>{4}</b>, so I recommend this phone.".format(
                 random.choice(slot_customers), random.choice(slot_think), high, attr_to_name(topkey1, 0),
                 attr_to_name(topkey2, 0))
         else:
-            explanation = "<b>{0} of our customers</b> {1} it can meet their {2} requirement for <b>{3}</b> and <b>{4}</b>, so I recommend this phone.".format(
+            explanation = "<span style=\"font-weight: bold\">{0} of our customers</span> {1} it can meet their {2} requirement for <b>{3}</b> and <b>{4}</b>, so I recommend this phone.".format(
                 random.choice(slot_customers), random.choice(slot_think), high, attr_to_name(topkey1, 0),
                 attr_to_name(topkey2, 0))
 
@@ -947,11 +948,11 @@ def geneExpForUserInput(user_preference_model, currentItem, explanation_type):
         if brand_mark:
             high = 'special'
             slot_reason = ["can meet my " + high + " requirement for", "can fulfil my need for"]
-            explanation = "I recommend this phone because <b>I have {0} by myself</b> and think it {1} <b>brand</b>, <b>{2}</b> and <b>{3}</b>.".format(
+            explanation = "I recommend this phone because <span style=\"font-weight: bold\">I have {0} by myself</span> and think it {1} <b>brand</b>, <b>{2}</b> and <b>{3}</b>.".format(
                 random.choice(slot_my), random.choice(slot_reason),
                 attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
         else:
-            explanation = "I recommend this phone because <b>I have {0} by myself</b> and think it {1} <b>{2}</b> and <b>{3}</b>.".format(
+            explanation = "I recommend this phone because <span style=\"font-weight: bold\">I have {0} by myself</span> and think it {1} <b>{2}</b> and <b>{3}</b>.".format(
                 random.choice(slot_my), random.choice(slot_reason),
                 attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
     if explanation_type == 0:
@@ -1034,6 +1035,8 @@ def geneExpForNextItem(user_preference_model, explanation_type, currentItem, old
         and_but = "but"
         if compare_ras1 == compare_ras2:
             and_but = "and"
+        if and_but == 'but' and topkey2 == 'ram':
+            compare2 = 'it has ' + compare2
         explanation = "<span style=\"font-weight: bold\">According to customers' reviews</span>, compared with the {0}, this phone has <b>{1}</b> {2} <b>{3}</b>.".format(
             oldItem['modelname'],
             compare1,
@@ -1044,6 +1047,8 @@ def geneExpForNextItem(user_preference_model, explanation_type, currentItem, old
         and_but = "but"
         if compare_ras1 == compare_ras2:
             and_but = "and"
+        if and_but == 'but' and topkey2 == 'ram':
+            compare2 = 'it has ' + compare2
         explanation = "<span style=\"font-weight: bold\">I have personally tested these phones</span>, compared with the {0}, this phone has <b>{1}</b> {2} <b>{3}</b>.".format(
             oldItem['modelname'],
             compare1,
