@@ -768,7 +768,7 @@ def attr_to_name_new(attr):
     elif attr == "cpu":
         return "processing speed"
     elif attr == "battery":
-        return "standby time"
+        return "battery life"
     elif attr == "displaysize":
         return "screen size"
     elif attr == "phone_thickness":
@@ -1054,5 +1054,7 @@ def geneExpForNextItem(user_preference_model, explanation_type, currentItem, old
             compare1,
             and_but,
             compare2)
-
+    if explanation_type == 0:
+        msgs = ['I find this phone for you.', 'You may like this phone.', 'Please check this phone.']
+        explanation = random.choice(msgs)
     return explanation
