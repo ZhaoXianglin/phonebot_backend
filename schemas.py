@@ -122,13 +122,13 @@ class Page1(Record):
     age: str
     nationality: str
 
-    trust_propensity1: int
-    trust_propensity2: int
-    trust_propensity3: int
+    # trust_propensity1: int
+    # trust_propensity2: int
+    # trust_propensity3: int
 
-    ce1: int
-    ce2: int
-    ce3: int
+    # ce1: int
+    # ce2: int
+    # ce3: int
 
     page1T: datetime
 
@@ -218,32 +218,22 @@ class Que1(Record):
 
 
 class Que2(Record):
+    interlligence1: int
+    interlligence2: int
+    interlligence3: int
+    design1: int
+    design2: int
+    design3: int
+    choice1: int
+    choice2: int
+    choice3: int
     cui_attentive2: int
     cui_attentive5: int
     cui_attentive6: int
     cui_attentive7: int
-
-    trust_compe1: int
-    trust_compe3: int
-    trust_compe4: int
-    trust_compe5: int
-
-    trust_integity1: int
-    trust_integity2: int
-    trust_integity3: int
-
-    intent2depend1: int
-    intent2depend2: int
-    intent2depend3: int
-
-    intent2follow1: int
-    intent2follow2: int
-    intent2follow3: int
-
     intent2purchase1: int
     intent2purchase2: int
     intent2purchase3: int
-
     atten_chk1: int
     que2T: datetime
 
