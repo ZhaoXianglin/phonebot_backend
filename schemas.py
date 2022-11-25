@@ -184,31 +184,34 @@ class Page2(Record):
 
 class Que1(Record):
     que1T: datetime
-    cui_human1: int
-    cui_human2: int
-    cui_human3: int
-
-    accuracy1: int
-    accuracy2: int
-    accuracy3: int
-
-    explain1: int
-    explain3: int
-    explain4: int
-
-    social_presence1: int
-    social_presence2: int
-    social_presence4: int
-
-    ease4: int
-    ease5: int
-    ease6: int
-
-    useful2: int
-    useful3: int
-    useful4: int
-
     check1: int
+
+    interlligence1: int
+    interlligence2: int
+    interlligence3: int
+
+    design1: int
+    design2: int
+    design3: int
+
+    choice1: int
+    choice2: int
+    choice3: int
+
+    control1: int
+    control4: int
+    control5: int
+    control6: int
+
+    cui_unders1: int
+    cui_unders2: int
+    cui_unders3: int
+
+    atten_chk1: int
+
+    eva_exp1: int
+    eva_exp2: int
+    eva_exp3: int
 
     # check2: int
 
@@ -218,15 +221,18 @@ class Que1(Record):
 
 
 class Que2(Record):
-    interlligence1: int
-    interlligence2: int
-    interlligence3: int
-    design1: int
-    design2: int
-    design3: int
-    choice1: int
-    choice2: int
-    choice3: int
+    accuracy1: int
+    accuracy2: int
+    accuracy3: int
+    accuracy4: int
+    explain1: int
+    explain2: int
+    explain3: int
+    explain4: int
+    social_presence1: int
+    social_presence2: int
+    social_presence3: int
+    social_presence4: int
     cui_attentive2: int
     cui_attentive5: int
     cui_attentive6: int
@@ -234,7 +240,7 @@ class Que2(Record):
     intent2purchase1: int
     intent2purchase2: int
     intent2purchase3: int
-    atten_chk1: int
+    atten_chk2: int
     que2T: datetime
 
     @validator("que2T", pre=True)
@@ -243,41 +249,19 @@ class Que2(Record):
 
 
 class Que3(Record):
-    openended1: str
-    openended2: str
-
-    que3T: datetime
-
-    @validator("que3T", pre=True)
-    def dt_validate(cls, que3T):
-        return datetime.fromtimestamp(que3T / 1000)
-
-
-class Que4(Record):
-    accuracy4: int
-    explain2: int
-    social_presence3: int
-    ease1: int
-    useful1: int
-
-    cui_resQuali1: int
-    cui_resQuali3: int
-    cui_interPace: int
-    cui_response: int
-
-    cui_unders1: int
-    cui_unders2: int
-    cui_unders3: int
-
     trans1: int
     trans2: int
     trans3: int
     trans4: int
 
-    control1: int
-    control4: int
-    control5: int
-    control6: int
+    cui_human1: int
+    cui_human2: int
+    cui_human3: int
+
+    ease1: int
+    ease4: int
+    ease5: int
+    ease6: int
 
     confidence1: int
     confidence2: int
@@ -287,13 +271,19 @@ class Que4(Record):
     satis1: int
     satis2: int
     satis3: int
+    atten_chk3: int
 
-    cui_positive1: int
-    cui_positive2: int
-    cui_positive3: int
-    cui_rapport2: int
+    que3T: datetime
 
-    atten_chk2: int
+    @validator("que3T", pre=True)
+    def dt_validate(cls, que3T):
+        return datetime.fromtimestamp(que3T / 1000)
+
+
+class Que4(Record):
+    openended1: str
+    openended2: str
+
     que4T: datetime
 
     @validator("que4T", pre=True)

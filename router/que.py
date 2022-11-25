@@ -71,8 +71,8 @@ def que2(page: Que2, db: Session = Depends(get_db)):
 
 
 # post-test open-ended two questions
-@que.post("/que3")
-def que4(page: Que3, db: Session = Depends(get_db)):
+@que.post("/que4")
+def que4(page: Que4, db: Session = Depends(get_db)):
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         update_info = page.dict(exclude_unset=True)
@@ -89,8 +89,8 @@ def que4(page: Que3, db: Session = Depends(get_db)):
 
 
 # post-test的第4页的问题，addtitional questionniare
-@que.post("/que4")
-def que3(page: Que4, db: Session = Depends(get_db)):
+@que.post("/que3")
+def que3(page: Que3, db: Session = Depends(get_db)):
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         update_info = page.dict(exclude_unset=True)
