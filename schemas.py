@@ -271,6 +271,11 @@ class Que3(Record):
     satis1: int
     satis2: int
     satis3: int
+
+    trust1: int
+    trust2: int
+    trust3: int
+    trust4: int
     atten_chk3: int
 
     que3T: datetime
