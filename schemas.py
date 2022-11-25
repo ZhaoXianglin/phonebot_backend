@@ -266,7 +266,6 @@ class Que3(Record):
     confidence1: int
     confidence2: int
     confidence4: int
-    confidence5: int
 
     satis1: int
     satis2: int
