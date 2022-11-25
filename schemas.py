@@ -209,9 +209,9 @@ class Que1(Record):
 
     atten_chk1: int
 
-    eva_exp1: int
-    eva_exp2: int
-    eva_exp3: int
+    eva_exp1: Optional[int]
+    eva_exp2: Optional[int]
+    eva_exp3: Optional[int]
 
     # check2: int
 
