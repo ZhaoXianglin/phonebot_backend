@@ -17,3 +17,4 @@
 > export GOOGLE_APPLICATION_CREDENTIALS="mobilephone_key.json"
 > uvicorn main:app --reload
 
+export GOOGLE_APPLICATION_CREDENTIALS='mobilephone_key.json'

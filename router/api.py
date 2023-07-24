@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from database import ph_records, get_db, generate_uuid, ph_phones
 from sqlalchemy.orm import Session
-from schemas import IdRecord, Accept, startPage, CommonRes, tutorPage
+from schemas import IdRecord, Accept, startPage, CommonRes, tutorPage, FirstChoice, FinalChoice
 from utils.tools import detect_intent_texts
 
 api = APIRouter(
@@ -100,6 +100,35 @@ def start(page: startPage, db: Session = Depends(get_db)):
 # 完成tutorial按钮
 @api.post("/tutorial")
 def tutorial(page: tutorPage, db: Session = Depends(get_db)):
+    user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
+    if user:
+        update_info = page.dict(exclude_unset=True)
+        for k, v in update_info.items():
+            setattr(user, k, v)
+        db.commit()
+        db.flush()
+        return CommonRes(status=1, msg='success')
+    else:
+        return CommonRes(status=0, msg='Error, Please accept the informed consent statement or try again later.')
+
+
+@api.post("/first_select")
+def first_select(page: FirstChoice, db: Session = Depends(get_db)):
+    user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
+    if user:
+        update_info = page.dict(exclude_unset=True)
+        for k, v in update_info.items():
+            setattr(user, k, v)
+            print(k, v)
+        db.commit()
+        db.flush()
+        return CommonRes(status=1, msg='success')
+    else:
+        return CommonRes(status=0, msg='Error, Please accept the informed consent statement or try again later.')
+
+
+@api.post("/final_select")
+def first_select(page: FinalChoice, db: Session = Depends(get_db)):
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         update_info = page.dict(exclude_unset=True)

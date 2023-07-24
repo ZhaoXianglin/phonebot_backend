@@ -23,9 +23,9 @@ app.include_router(chat.chat)
 def register_redis(app: FastAPI):
     @app.on_event("startup")
     async def startup_event():
-        app.state.redis = await aioredis.from_url("redis://redis-10499.c54.ap-northeast-1-2.ec2.cloud.redislabs.com",
-                                                  port=10499,
-                                                  password="KmIe8HC79I20Q0dvZb58dL1VKbYHTVZQ",
+        app.state.redis = await aioredis.from_url("redis://redis-19591.c299.asia-northeast1-1.gce.cloud.redislabs.com",
+                                                  port=19591,
+                                                  password="19EyREFPXcF3DQcbXa6lF5KSvW6kIKF2",
                                                   encoding="utf-8", decode_responses=True)
         print(f"redis成功--->>{app.state.redis}")
 

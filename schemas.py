@@ -116,6 +116,13 @@ class tutorPage(Record):
         return datetime.fromtimestamp(tutorT / 1000)
 
 
+class FirstChoice(Record):
+    first_select: int
+
+class FinalChoice(Record):
+    recommended_phone: str
+    final_select: int
+
 class Page1(Record):
     prolific_id: str
     gender: str
@@ -185,6 +192,7 @@ class Page2(Record):
 class Que1(Record):
     que1T: datetime
     check1: int
+    check2: int
 
     interlligence1: int
     interlligence2: int
