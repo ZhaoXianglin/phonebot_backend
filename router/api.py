@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
-from database import ph_records, get_db, generate_uuid, ph_phones
 from sqlalchemy.orm import Session
+
+from database import ph_records, get_db, generate_uuid, ph_phones
 from schemas import IdRecord, Accept, startPage, CommonRes, tutorPage, FirstChoice, FinalChoice
 from utils.tools import detect_intent_texts
 

@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends
-from database import ph_records, get_db
-from sqlalchemy.orm import Session
 import hashlib
-from schemas import Page1, CommonRes, Que1, Que2, Que3, Que4, Scenario
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from database import ph_records, get_db
+from schemas import Page1, CommonRes, Que2, Que3, Que4, Scenario, Game, PostTable
 
 que = APIRouter(
     prefix="/que",
@@ -14,6 +16,20 @@ que = APIRouter(
 # demographic
 @que.post("/pre1")
 def page1(page: Page1, db: Session = Depends(get_db)):
+    user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
+    if user:
+        update_info = page.dict(exclude_unset=True)
+        for k, v in update_info.items():
+            setattr(user, k, v)
+        db.commit()
+        db.flush()
+        return CommonRes(status=1, msg='success')
+    else:
+        return CommonRes(status=0, msg='Error, Please accept the informed consent statement or try again later.')
+
+
+@que.post("/game")
+def game(page: Game, db: Session = Depends(get_db)):
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         update_info = page.dict(exclude_unset=True)
@@ -41,8 +57,8 @@ def page1(page: Scenario, db: Session = Depends(get_db)):
 
 
 # post-test的第一页问题
-@que.post("/que1")
-def que1(page: Que1, db: Session = Depends(get_db)):
+@que.post("/post_table")
+def que1(page: PostTable, db: Session = Depends(get_db)):
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         update_info = page.dict(exclude_unset=True)

@@ -1,5 +1,6 @@
-from typing import List, Optional
-from datetime import date, datetime
+from datetime import datetime
+from typing import Optional
+
 from pydantic import BaseModel, validator
 
 
@@ -119,15 +120,39 @@ class tutorPage(Record):
 class FirstChoice(Record):
     first_select: int
 
+
 class FinalChoice(Record):
     recommended_phone: str
+    reason: str
+    tableT: datetime
     final_select: int
+
+
+@validator("tableT", pre=True)
+def dt_validate(cls, tableT):
+    return datetime.fromtimestamp(tableT / 1000)
+
 
 class Page1(Record):
     prolific_id: str
     gender: str
     age: str
     nationality: str
+    decision1: int
+    decision2: int
+    decision3: int
+    decision4: int
+    decision5: int
+    decision6: int
+    decision7: int
+    decision8: int
+    decision9: int
+    domain1: int
+    domain2: int
+    domain3: int
+    maximizer1: int
+    maximizer2: int
+    maximizer3: int
 
     # trust_propensity1: int
     # trust_propensity2: int
@@ -142,6 +167,16 @@ class Page1(Record):
     @validator("page1T", pre=True)
     def dt_validate(cls, page1T):
         return datetime.fromtimestamp(page1T / 1000)
+
+
+class Game(Record):
+    highest_span_score: int
+    consec_error_score: int
+    gameT: datetime
+
+    @validator("gameT", pre=True)
+    def dt_validate(cls, gameT):
+        return datetime.fromtimestamp(gameT / 1000)
 
 
 class Scenario(Record):
@@ -301,3 +336,19 @@ class Que4(Record):
     @validator("que4T", pre=True)
     def dt_validate(cls, que4T):
         return datetime.fromtimestamp(que4T / 1000)
+
+
+class PostTable(Record):
+    cognitive1: int
+    cognitive2: int
+    cognitive3: int
+    cognitive4: int
+    cognitive5: int
+    cognitive6: int
+    cognitive7: int
+    confidence1: int
+    postT: datetime
+
+    @validator("postT", pre=True)
+    def dt_validate(cls, postT):
+        return datetime.fromtimestamp(postT / 1000)
