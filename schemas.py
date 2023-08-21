@@ -345,8 +345,6 @@ class PostTable(Record):
     cognitive4: int
     cognitive5: int
     cognitive6: int
-    cognitive7: int
-    confidence1: int
     postT: datetime
 
     @validator("postT", pre=True)

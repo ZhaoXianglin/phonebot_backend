@@ -35,7 +35,7 @@ def accept(user: Accept, db: Session = Depends(get_db)):
     db.refresh(db_user)
     # 更新条件
     db_user.identity_cue = 0
-    db_user.explanation_style = 0
+    db_user.explanation_style = 1
     # if db_user.id % 4 == 0:
     #     db_user.identity_cue = 0
     #     db_user.explanation_style = 0
