@@ -350,3 +350,7 @@ class PostTable(Record):
     @validator("postT", pre=True)
     def dt_validate(cls, postT):
         return datetime.fromtimestamp(postT / 1000)
+
+
+class RandomID(BaseModel):
+    randomID: str

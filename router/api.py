@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from database import ph_records, get_db, generate_uuid, ph_phones
-from schemas import IdRecord, Accept, startPage, CommonRes, tutorPage, FirstChoice, FinalChoice
+from schemas import IdRecord, Accept, startPage, CommonRes, tutorPage, FirstChoice, FinalChoice, RandomID
 from utils.tools import detect_intent_texts
 
 api = APIRouter(
@@ -140,5 +140,15 @@ def first_select(page: FinalChoice, db: Session = Depends(get_db)):
         db.commit()
         db.flush()
         return CommonRes(status=1, msg='success')
+    else:
+        return CommonRes(status=0, msg='Error, Please accept the informed consent statement or try again later.')
+
+
+@api.post("/checkid")
+def checkid(page: RandomID, db: Session = Depends(get_db)):
+    user = db.query(ph_records).filter(ph_records.prolific_id == page.randomID).first()
+    if user:
+        return {'status': 1, 'msg': 'success', 'id': user.id, 'uuid': user.uuid, 'identity_cue': user.identity_cue,
+                'explanation_style': user.explanation_style}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement or try again later.')
