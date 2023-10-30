@@ -12,7 +12,7 @@ Base.prepare(engine, reflect=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # mapped classes are now created with names by default
 # matching that of the table name.
-ph_records = Base.classes.ph_records
+ph_records = Base.classes.ph_newrec
 ph_phones = Base.classes.ph_phones
 
 
