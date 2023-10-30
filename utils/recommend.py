@@ -94,7 +94,7 @@ def UpdateUserModel(json_data):
     # 用户模型
     user_model = user_profile['user']
     # 当前推荐的项目
-    current_recommended_item = user_profile['topRecommendedItem']
+    current_recommended_item = user_profile['topRecommendedItem'][0]
     # update the user model (three parts)
     updated_user_preference_model, updated_user_constraints, updated_user_critique_preference = user_modeling.update_user_model(
         user_model,

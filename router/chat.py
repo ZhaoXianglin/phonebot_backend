@@ -184,7 +184,7 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         res = detect_intent_texts("phonebot-auym", page.uuid, page.message, 'en')
-        print(res, 'dialogflow')
+        # print(res, 'dialogflow')
         parse_res = parseResponse(res)
         page.logger[-1]['critique'].append(parse_res)
         u_model = await request.app.state.redis.get(page.uuid)
@@ -227,7 +227,7 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
         res_phones = [recommendPhone(u_model['topRecommendedItem'][0]),
                       recommendPhone(u_model['topRecommendedItem'][1]),
-                      recommendPhone(u_model['topRecommendedItem'])[2]]
+                      recommendPhone(u_model['topRecommendedItem'][2])]
         resmsg = geneExpForUserInput(u_model['user']['user_preference_model'], res_phones[0],
                                      page.explanation_style)
         resmsg = resmsg.replace("</span>", "").replace("<span style=\"font-weight: bold\">", "")
