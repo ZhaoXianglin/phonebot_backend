@@ -89,15 +89,19 @@ async def prefer(request: Request, page: Preference, db: Session = Depends(get_d
             u_model["user"]["user_preference_model"]["attribute_frequency"]["battery"] += 1
         u_model['topRecommendedItem'] = u_model['pool'][0]
         # 获取给用户返回的手机
-        resphone = recommendPhone(u_model['pool'][0])
+        res_phones = [recommendPhone(u_model['pool'][0])]
         # 将推荐项从pool中移除
+        u_model['pool'].pop(0)
+        res_phones.append(recommendPhone(u_model['pool'][0]))
+        u_model['pool'].pop(0)
+        res_phones.append(recommendPhone(u_model['pool'][0]))
         u_model['pool'].pop(0)
         # 将模型redis持久化
         # print(u_model)
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
-        resmsg = geneExpForUserInput(u_model['user']['user_preference_model'], resphone,
-                                     page.explanation_style)
-        return {'status': 1, 'msg': resmsg, 'phone': resphone}
+        resmsg = geneExpForUserInput(u_model['user']['user_preference_model'], res_phones[0],
+                                     0)
+        return {'status': 1, 'msg': resmsg, 'phone': res_phones}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
@@ -105,7 +109,6 @@ async def prefer(request: Request, page: Preference, db: Session = Depends(get_d
 # 更新用户偏好,加入购物车
 @chat.post("/updatemodel")
 async def update_model(request: Request, page: LoggerModel, db: Session = Depends(get_db)):
-    print(page)
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
         u_model = await request.app.state.redis.get(page.uuid)
@@ -115,48 +118,61 @@ async def update_model(request: Request, page: LoggerModel, db: Session = Depend
         if len(u_model['pool']) < 20:
             print("Danger: pool")
             u_model = InitializeUserModel(u_model)
-
         u_model['logger']['latest_dialog'] = page.logger
         u_model = UpdateUserModel(u_model)
         if hasattr(u_model, 'recommendation_list'):
-            if len(u_model['recommendation_list']) > 0:
-                u_model['topRecommendedItem'] = u_model['recommendation_list'][0]
+            if len(u_model['recommendation_list']) >= 3:
+                u_model['topRecommendedItem'] = u_model['recommendation_list'][:3]
                 # 移除已经推荐的项目
                 u_model['pool'].remove(u_model['recommendation_list'][0])
-                u_model['recommendation_list'] = u_model['recommendation_list'][1:]
+                u_model['pool'].remove(u_model['recommendation_list'][1])
+                u_model['pool'].remove(u_model['recommendation_list'][2])
+                u_model['recommendation_list'] = u_model['recommendation_list'][3:]
             else:
                 recommended = GetRec(u_model)
-                if len(recommended['recommendation_list']) > 0:
-                    u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
+                if len(recommended['recommendation_list']) >= 3:
+                    u_model['topRecommendedItem'] = recommended['recommendation_list'][:3]
                     # 移除已经推荐的项目
-                    u_model['recommendation_list'] = recommended['recommendation_list'][1:]
                     u_model['pool'].remove(recommended['recommendation_list'][0])
+                    u_model['pool'].remove(recommended['recommendation_list'][1])
+                    u_model['pool'].remove(recommended['recommendation_list'][2])
+                    u_model['recommendation_list'] = recommended['recommendation_list'][3:]
                 else:
-                    u_model['topRecommendedItem'] = u_model['pool'][0]
+                    u_model['topRecommendedItem'] = u_model['pool'][:3]
                     # 移除已经推荐的项目
                     u_model['pool'].pop(0)
+                    u_model['pool'].pop(0)
+                    u_model['pool'].pop(0)
+
         else:
             recommended = GetRec(u_model)
-            if len(recommended['recommendation_list']) > 0:
-                u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
+            if len(recommended['recommendation_list']) >= 3:
+                u_model['topRecommendedItem'] = recommended['recommendation_list'][:3]
                 # 移除已经推荐的项目
-                u_model['recommendation_list'] = recommended['recommendation_list'][1:]
                 u_model['pool'].remove(recommended['recommendation_list'][0])
+                u_model['pool'].remove(recommended['recommendation_list'][1])
+                u_model['pool'].remove(recommended['recommendation_list'][2])
+                u_model['recommendation_list'] = recommended['recommendation_list'][3:]
             else:
-                u_model['topRecommendedItem'] = u_model['pool'][0]
+                u_model['topRecommendedItem'] = u_model['pool'][:3]
                 # 移除已经推荐的项目
                 u_model['pool'].pop(0)
+                u_model['pool'].pop(0)
+                u_model['pool'].pop(0)
+
         # 将模型redis持久化
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
         # print(u_model, "=========after===========")
-        resphone = recommendPhone(u_model['topRecommendedItem'])
+        res_phones = [recommendPhone(u_model['topRecommendedItem'][0]),
+                      recommendPhone(u_model['topRecommendedItem'][1]),
+                      recommendPhone(u_model['topRecommendedItem'][2])]
         resmsg = geneExpForNextItem(u_model['user']['user_preference_model'],
-                                    page.explanation_style, resphone, page.phone)
+                                    page.explanation_style, res_phones[0], page.phone)
         if len(resmsg) < 2:
             resmsg = "I didn't find an appropriate phone for you, maybe you can try this one."
         if page.try_another_count > 1:
             resmsg = resmsg.replace("</span>", "").replace("<span style=\"font-weight: bold\">", "")
-        return {'status': 1, 'msg': resmsg, 'phone': resphone}
+        return {'status': 1, 'msg': resmsg, 'phone': res_phones}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
@@ -188,26 +204,34 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
             u_model['new_pool'] = phone_ids
         recommended = GetRec(u_model)
         # print(recommended)
-        if len(recommended['recommendation_list']) > 0:
-            u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
+        if len(recommended['recommendation_list']) >= 3:
+            u_model['topRecommendedItem'] = recommended['recommendation_list'][:3]
             # 移除已经推荐的项目
-            u_model['recommendation_list'] = recommended['recommendation_list'][1:]
+            u_model['recommendation_list'] = recommended['recommendation_list'][3:]
             if recommended['recommendation_list'][0] in u_model['pool']:
                 u_model['pool'].remove(recommended['recommendation_list'][0])
+            if recommended['recommendation_list'][1] in u_model['pool']:
+                u_model['pool'].remove(recommended['recommendation_list'][1])
+            if recommended['recommendation_list'][2] in u_model['pool']:
+                u_model['pool'].remove(recommended['recommendation_list'][2])
         else:
             res['text'] = "error"
-            u_model['topRecommendedItem'] = u_model['pool'][0]
+            u_model['topRecommendedItem'] = u_model['pool'][:3]
             # 移除已经推荐的项目
+            u_model['pool'].pop(0)
+            u_model['pool'].pop(0)
             u_model['pool'].pop(0)
         # 清空最新的操作记录
         u_model['logger']['latest_dialog'] = []
         # 将模型redis持久化
         await request.app.state.redis.set(page.uuid, json.dumps(u_model))
-        resphone = recommendPhone(u_model['topRecommendedItem'])
-        resmsg = geneExpForUserInput(u_model['user']['user_preference_model'], resphone,
+        res_phones = [recommendPhone(u_model['topRecommendedItem'][0]),
+                      recommendPhone(u_model['topRecommendedItem'][1]),
+                      recommendPhone(u_model['topRecommendedItem'])[2]]
+        resmsg = geneExpForUserInput(u_model['user']['user_preference_model'], res_phones[0],
                                      page.explanation_style)
         resmsg = resmsg.replace("</span>", "").replace("<span style=\"font-weight: bold\">", "")
-        return {'status': 1, 'msg': resmsg, 'phone': resphone}
+        return {'status': 1, 'msg': resmsg, 'phone': res_phones}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
@@ -956,7 +980,7 @@ def geneExpForUserInput(user_preference_model, currentItem, explanation_type):
                 random.choice(slot_my), random.choice(slot_reason),
                 attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
     if explanation_type == 0:
-        msgs = ['I find this phone for you.', 'You may like this phone.', 'Please check this phone.']
+        msgs = ['I find these phones for you.', 'You may like these phones.', 'Please check these phones.']
         explanation = random.choice(msgs)
     return explanation
 
