@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends
-from database import ph_records, get_db, generate_uuid, ph_phones
 from sqlalchemy.orm import Session
-from schemas import IdRecord, Accept, startPage, CommonRes, tutorPage
+
+from database import ph_records, get_db, generate_uuid, ph_phones
+from schemas import IdRecord, Accept, startPage, CommonRes, tutorPage, FirstChoice, FinalChoice, RandomID
 from utils.tools import detect_intent_texts
 
 api = APIRouter(
@@ -33,24 +34,26 @@ def accept(user: Accept, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_user)
     # 更新条件
-    if db_user.id % 6 == 0:
+    db_user.identity_cue = 0
+    db_user.explanation_style = 1
+    if db_user.id % 4 == 0:
+        db_user.identity_cue = 0
+        db_user.explanation_style = 0
+    if db_user.id % 4 == 1:
         db_user.identity_cue = 0
         db_user.explanation_style = 1
-    if db_user.id % 6 == 1:
-        db_user.identity_cue = 0
-        db_user.explanation_style = 2
-    if db_user.id % 6 == 2:
-        db_user.identity_cue = 0
-        db_user.explanation_style = 3
-    if db_user.id % 6 == 3:
+    if db_user.id % 4 == 2:
+        db_user.identity_cue = 1
+        db_user.explanation_style = 0
+    if db_user.id % 4 == 3:
         db_user.identity_cue = 1
         db_user.explanation_style = 1
-    if db_user.id % 6 == 4:
-        db_user.identity_cue = 1
-        db_user.explanation_style = 2
-    if db_user.id % 6 == 5:
-        db_user.identity_cue = 1
-        db_user.explanation_style = 3
+    # if db_user.id % 6 == 4:
+    #     db_user.identity_cue = 1
+    #     db_user.explanation_style = 2
+    # if db_user.id % 6 == 5:
+    #     db_user.identity_cue = 1
+    #     db_user.explanation_style = 3
     # if db_user.id % 8 == 0:
     #     db_user.identity_cue = 0
     #     db_user.explanation_style = 0
@@ -108,5 +111,44 @@ def tutorial(page: tutorPage, db: Session = Depends(get_db)):
         db.commit()
         db.flush()
         return CommonRes(status=1, msg='success')
+    else:
+        return CommonRes(status=0, msg='Error, Please accept the informed consent statement or try again later.')
+
+
+@api.post("/first_select")
+def first_select(page: FirstChoice, db: Session = Depends(get_db)):
+    user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
+    if user:
+        update_info = page.dict(exclude_unset=True)
+        for k, v in update_info.items():
+            setattr(user, k, v)
+            print(k, v)
+        db.commit()
+        db.flush()
+        return CommonRes(status=1, msg='success')
+    else:
+        return CommonRes(status=0, msg='Error, Please accept the informed consent statement or try again later.')
+
+
+@api.post("/final_select")
+def first_select(page: FinalChoice, db: Session = Depends(get_db)):
+    user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
+    if user:
+        update_info = page.dict(exclude_unset=True)
+        for k, v in update_info.items():
+            setattr(user, k, v)
+        db.commit()
+        db.flush()
+        return CommonRes(status=1, msg='success')
+    else:
+        return CommonRes(status=0, msg='Error, Please accept the informed consent statement or try again later.')
+
+
+@api.post("/checkid")
+def checkid(page: RandomID, db: Session = Depends(get_db)):
+    user = db.query(ph_records).filter(ph_records.prolific_id == page.randomID).first()
+    if user:
+        return {'status': 1, 'msg': 'success', 'id': user.id, 'uuid': user.uuid, 'identity_cue': user.identity_cue,
+                'explanation_style': user.explanation_style}
     else:
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement or try again later.')
