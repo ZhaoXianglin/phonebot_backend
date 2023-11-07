@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends, Request
-from database import ph_records, get_db, ph_phones, get_session
-from sqlalchemy.orm import Session
-
 import json
 import random
+
+from fastapi import APIRouter, Depends, Request
+from sqlalchemy.orm import Session
+
+from database import ph_records, get_db, ph_phones, get_session
 from schemas import Preference, CommonRes, Page2, userMsg, LoggerModel
-from utils.tools import detect_intent_texts
-from utils.recommend import InitializeUserModel, UpdateUserModel, GetRec, GetSysCri
 from utils.function.user_model_default import user_model
+from utils.recommend import InitializeUserModel, UpdateUserModel, GetRec
+from utils.tools import detect_intent_texts
 
 chat = APIRouter(
     prefix="/chat",
@@ -106,6 +107,90 @@ async def prefer(request: Request, page: Preference, db: Session = Depends(get_d
         return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
 
 
+@chat.post("/sprefer")
+async def sprefer(request: Request, page: Preference, db: Session = Depends(get_db)):
+    # 查询用户
+    user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
+    if user:
+        # 如果用户信息存在，说明做完了前测，可以继续
+        update_info = page.dict(exclude_unset=True)
+        for k, v in update_info.items():
+            setattr(user, k, v)
+        db.commit()
+        # 写入数据库
+        db.flush()
+
+        # 更新记录后包装用户模型
+        u_model = user_model.copy()
+        if page.brand in ['Apple', 'Samsung', 'Huawei']:
+            u_model["user"]["preferenceData"]["brand"] = [page.brand]
+        else:
+            # 这里是不含'Apple', 'Samsung', 'Huawei'的全部品牌
+            brand = ['Xiaomi', 'vivo', 'Oppo', 'Realme', 'Motorola', 'Honor',
+                     'ZTE', 'BLU', 'Nokia', 'LG', 'Ulefone', 'Lava', 'TCL',
+                     'OnePlus', 'alcatel', 'Asus', 'Lenovo', 'Sony', 'Meizu',
+                     'Wiko', 'Tecno', 'Lava', 'Infinix', 'Google']
+            if page.brand == '':
+                # 如果没选品牌
+                selected_brand = random.sample(brand, 5) + ['Apple', 'Samsung', 'Huawei']
+                u_model["user"]["preferenceData"]["brand"] = selected_brand
+                # print(random.sample(brand, 5))
+            else:
+                # 选了品牌但是不喜欢这三种'Apple', 'Samsung', 'Huawei'
+                u_model["user"]["preferenceData"]["brand"] = random.sample(brand, 8)
+        # 更新预算，这是个必选的
+        u_model["user"]["preferenceData"]["price"] = [0, int(page.budget)]
+        # 初始化电池
+        if page.battery == "Large":
+            u_model["user"]["preferenceData"]["battery"] = [4499, 13201]
+        if page.battery == "Medium":
+            u_model["user"]["preferenceData"]["battery"] = [4000, 4999]
+        if page.battery == "Small":
+            u_model["user"]["preferenceData"]["battery"] = [1299, 4049]
+
+        # 初始化显示
+        if page.displaysize == "Large":
+            u_model["user"]["preferenceData"]["displaysize"] = [6.51, 7.2]
+        if page.displaysize == "Middle":
+            u_model["user"]["preferenceData"]["displaysize"] = [6.21, 6.64]
+        if page.displaysize == "Small":
+            u_model["user"]["preferenceData"]["displaysize"] = [2.3, 6.43]
+
+        # 初始化重量
+        if page.weight == "Heavy":
+            u_model["user"]["preferenceData"]["phone_weight"] = [191, 493]
+        if page.weight == "Medium":
+            u_model["user"]["preferenceData"]["phone_weight"] = [170, 201]
+        if page.weight == "Light":
+            u_model["user"]["preferenceData"]["phone_weight"] = [84, 183]
+
+        # u_model["user"]["preferenceData"]["camera"] = [int(page.cameras), 108]
+        # 更新计算后的用户模型
+        u_model = InitializeUserModel(u_model)
+        # print(u_model["user"]["user_preference_model"]["attribute_frequency"])
+        if page.brand in ['Apple', 'Samsung', 'Huawei']:
+            u_model["user"]["user_preference_model"]["attribute_frequency"]["brand"] += 1
+        if len(page.weight) > 2:
+            u_model["user"]["user_preference_model"]["attribute_frequency"]["phone_weight"] += 1
+        if len(page.displaysize) > 2:
+            u_model["user"]["user_preference_model"]["attribute_frequency"]["displaysize"] += 1
+        if len(page.battery) > 2:
+            u_model["user"]["user_preference_model"]["attribute_frequency"]["battery"] += 1
+        u_model['topRecommendedItem'] = u_model['pool'][0]
+        # 获取给用户返回的手机
+        res_phones = recommendPhone(u_model['pool'][0])
+        # 将推荐项从pool中移除
+        u_model['pool'].pop(0)
+        # 将模型redis持久化
+        # print(u_model)
+        await request.app.state.redis.set(page.uuid, json.dumps(u_model))
+        resmsg = geneExpForUserInput(u_model['user']['user_preference_model'], res_phones,
+                                     1)
+        return {'status': 1, 'msg': resmsg, 'phone': res_phones}
+    else:
+        return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
+
+
 # 更新用户偏好,加入购物车
 @chat.post("/updatemodel")
 async def update_model(request: Request, page: LoggerModel, db: Session = Depends(get_db)):
@@ -167,7 +252,63 @@ async def update_model(request: Request, page: LoggerModel, db: Session = Depend
                       recommendPhone(u_model['topRecommendedItem'][1]),
                       recommendPhone(u_model['topRecommendedItem'][2])]
         resmsg = geneExpForNextItem(u_model['user']['user_preference_model'],
-                                    page.explanation_style, res_phones[0], page.phone)
+                                    0, res_phones[0], page.phone)
+        if len(resmsg) < 2:
+            resmsg = "I didn't find an appropriate phone for you, maybe you can try this one."
+        if page.try_another_count > 1:
+            resmsg = resmsg.replace("</span>", "").replace("<span style=\"font-weight: bold\">", "")
+        return {'status': 1, 'msg': resmsg, 'phone': res_phones}
+    else:
+        return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
+
+
+@chat.post("/supdatemodel")
+async def supdate_model(request: Request, page: LoggerModel, db: Session = Depends(get_db)):
+    user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
+    if user:
+        u_model = await request.app.state.redis.get(page.uuid)
+        # print(u_model, "=========before===========")
+        u_model = json.loads(u_model)
+        # 防止池空
+        if len(u_model['pool']) < 20:
+            print("Danger: pool")
+            u_model = InitializeUserModel(u_model)
+        u_model['logger']['latest_dialog'] = page.logger
+        u_model = UpdateUserModel(u_model)
+        if hasattr(u_model, 'recommendation_list'):
+            if len(u_model['recommendation_list']) >= 3:
+                u_model['topRecommendedItem'] = u_model['recommendation_list'][0]
+                # 移除已经推荐的项目
+                u_model['pool'].remove(u_model['recommendation_list'][0])
+                u_model['recommendation_list'] = u_model['recommendation_list'][1:]
+            else:
+                recommended = GetRec(u_model)
+                if len(recommended['recommendation_list']) >= 1:
+                    u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
+                    # 移除已经推荐的项目
+                    u_model['pool'].remove(recommended['recommendation_list'][0])
+                    u_model['recommendation_list'] = recommended['recommendation_list'][1:]
+                else:
+                    u_model['topRecommendedItem'] = u_model['pool'][0]
+                    # 移除已经推荐的项目
+                    u_model['pool'].pop(0)
+        else:
+            recommended = GetRec(u_model)
+            if len(recommended['recommendation_list']) >= 1:
+                u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
+                # 移除已经推荐的项目
+                u_model['pool'].remove(recommended['recommendation_list'][0])
+                u_model['recommendation_list'] = recommended['recommendation_list'][1:]
+            else:
+                u_model['topRecommendedItem'] = u_model['pool'][0]
+                # 移除已经推荐的项目
+                u_model['pool'].pop(0)
+
+        # 将模型redis持久化
+        await request.app.state.redis.set(page.uuid, json.dumps(u_model))
+        # print(u_model, "=========after===========")
+        res_phones = recommendPhone(u_model['topRecommendedItem'])
+        resmsg = geneExpForNextItem(u_model['user']['user_preference_model'], 1, res_phones, page.phone)
         if len(resmsg) < 2:
             resmsg = "I didn't find an appropriate phone for you, maybe you can try this one."
         if page.try_another_count > 1:
@@ -179,7 +320,7 @@ async def update_model(request: Request, page: LoggerModel, db: Session = Depend
 
 # 用户消息
 @chat.post("/userMessage")
-async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_db)):
+async def usermessage(request: Request, page: userMsg, db: Session = Depends(get_db)):
     print(page)
     user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
     if user:
@@ -228,8 +369,56 @@ async def usermsgres(request: Request, page: userMsg, db: Session = Depends(get_
         res_phones = [recommendPhone(u_model['topRecommendedItem'][0]),
                       recommendPhone(u_model['topRecommendedItem'][1]),
                       recommendPhone(u_model['topRecommendedItem'][2])]
-        resmsg = geneExpForUserInput(u_model['user']['user_preference_model'], res_phones[0],
-                                     page.explanation_style)
+        resmsg = geneExpForUserInput(u_model['user']['user_preference_model'], res_phones[0], 0)
+        resmsg = resmsg.replace("</span>", "").replace("<span style=\"font-weight: bold\">", "")
+        return {'status': 1, 'msg': resmsg, 'phone': res_phones}
+    else:
+        return CommonRes(status=0, msg='Error, Please accept the informed consent statement first or try again later.')
+
+
+@chat.post("/suserMessage")
+async def susermessage(request: Request, page: userMsg, db: Session = Depends(get_db)):
+    # print(page)
+    user = db.query(ph_records).filter(ph_records.uuid == page.uuid).first()
+    if user:
+        res = detect_intent_texts("phonebot-auym", page.uuid, page.message, 'en')
+        # print(res, 'dialogflow')
+        parse_res = parseResponse(res)
+        page.logger[-1]['critique'].append(parse_res)
+        u_model = await request.app.state.redis.get(page.uuid)
+        u_model = json.loads(u_model)
+        # print(u_model, '-------------')
+        u_model['logger']['latest_dialog'] = page.logger
+        u_model = UpdateUserModel(u_model)
+        # print(u_model, '+++++++++++++')
+        # 处理品牌扩展
+        if parse_res.__contains__("brand") and parse_res.get('brand'):
+            other_phone = db.query(ph_phones.id).filter(ph_phones.brand == parse_res.get('brand')).all()
+            print("----------", other_phone)
+            phone_ids = []
+            for item in other_phone:
+                phone_ids.append(item[0])
+            # 添加新的品牌到池子里面
+            u_model['new_pool'] = phone_ids
+        recommended = GetRec(u_model)
+        # print(recommended)
+        if len(recommended['recommendation_list']) >= 1:
+            u_model['topRecommendedItem'] = recommended['recommendation_list'][0]
+            # 移除已经推荐的项目
+            u_model['recommendation_list'] = recommended['recommendation_list'][1:]
+            if recommended['recommendation_list'][0] in u_model['pool']:
+                u_model['pool'].remove(recommended['recommendation_list'][0])
+        else:
+            res['text'] = "error"
+            u_model['topRecommendedItem'] = u_model['pool'][0]
+            # 移除已经推荐的项目
+            u_model['pool'].pop(0)
+        # 清空最新的操作记录
+        u_model['logger']['latest_dialog'] = []
+        # 将模型redis持久化
+        await request.app.state.redis.set(page.uuid, json.dumps(u_model))
+        res_phones = recommendPhone(u_model['topRecommendedItem']),
+        resmsg = geneExpForUserInput(u_model['user']['user_preference_model'], res_phones, 1)
         resmsg = resmsg.replace("</span>", "").replace("<span style=\"font-weight: bold\">", "")
         return {'status': 1, 'msg': resmsg, 'phone': res_phones}
     else:
@@ -941,15 +1130,15 @@ def geneExpForUserInput(user_preference_model, currentItem, explanation_type):
     explanation = ""
     # Non-social explanations
     # Non-social explanations
-    if explanation_type == 1:
-        # 获得排名情况
-        res = rank_phone(attr1, currentItem[attr1], attr2, currentItem[attr2])
-        if brand_mark:
-            explanation = "I recommend this phone because the brand is popular and it ranks top {0}% for <b>{1}</b> and top {2}% for <b>{3}</b> among 1265 phones in our product library.".format(
-                res[0], attr_to_name_new(topkey1), res[1], attr_to_name_new(topkey2))
-        else:
-            explanation = "I recommend this phone because it ranks top {0}% for <b>{1}</b> and top {2}% for <b>{3}</b> among 1265 phones in our product library.".format(
-                res[0], attr_to_name_new(topkey1), res[1], attr_to_name_new(topkey2))
+    # if explanation_type == 1:
+    #     # 获得排名情况
+    #     res = rank_phone(attr1, currentItem[attr1], attr2, currentItem[attr2])
+    #     if brand_mark:
+    #         explanation = "I recommend this phone because the brand is popular and it ranks top {0}% for <b>{1}</b> and top {2}% for <b>{3}</b> among 1265 phones in our product library.".format(
+    #             res[0], attr_to_name_new(topkey1), res[1], attr_to_name_new(topkey2))
+    #     else:
+    #         explanation = "I recommend this phone because it ranks top {0}% for <b>{1}</b> and top {2}% for <b>{3}</b> among 1265 phones in our product library.".format(
+    #             res[0], attr_to_name_new(topkey1), res[1], attr_to_name_new(topkey2))
 
     # Social explanations (third-party opinions)
     if explanation_type == 2:
@@ -981,6 +1170,9 @@ def geneExpForUserInput(user_preference_model, currentItem, explanation_type):
                 attr_to_name(topkey1, 0), attr_to_name(topkey2, 0))
     if explanation_type == 0:
         msgs = ['I find these phones for you.', 'You may like these phones.', 'Please check these phones.']
+        explanation = random.choice(msgs)
+    if explanation_type == 1:
+        msgs = ['I find this phone for you.', 'You may like this phone.', 'Please check this phone.']
         explanation = random.choice(msgs)
     return explanation
 
@@ -1035,23 +1227,23 @@ def geneExpForNextItem(user_preference_model, explanation_type, currentItem, old
     explanation = ""
 
     # Non-social explanations
-    if explanation_type == 1:
-        compare1, compare_ras1 = getValueRangeForNonSocial(topkey1, oldItem[attr1], currentItem[attr1])
-        compare2, compare_ras2 = getValueRangeForNonSocial(topkey2, oldItem[attr2], currentItem[attr2])
-        and_but = "but"
-        if compare_ras1 == compare_ras2:
-            and_but = "and"
-        if compare_ras1 == 'high':
-            temp_val = cal_better_range(oldItem[attr1], currentItem[attr1])
-            if temp_val != 0:
-                compare1 += " ({0}%)".format(temp_val)
-        if compare_ras2 == 'high':
-            temp_val = cal_better_range(oldItem[attr2], currentItem[attr2])
-            if temp_val != 0:
-                compare2 += " ({0}%)".format(cal_better_range(oldItem[attr2], currentItem[attr2]))
-        explanation = "Compared with the previous phone, this phone has <b>{0}</b> {1} <b>{2}</b>.".format(compare1,
-                                                                                                           and_but,
-                                                                                                           compare2)
+    # if explanation_type == 1:
+    #     compare1, compare_ras1 = getValueRangeForNonSocial(topkey1, oldItem[attr1], currentItem[attr1])
+    #     compare2, compare_ras2 = getValueRangeForNonSocial(topkey2, oldItem[attr2], currentItem[attr2])
+    #     and_but = "but"
+    #     if compare_ras1 == compare_ras2:
+    #         and_but = "and"
+    #     if compare_ras1 == 'high':
+    #         temp_val = cal_better_range(oldItem[attr1], currentItem[attr1])
+    #         if temp_val != 0:
+    #             compare1 += " ({0}%)".format(temp_val)
+    #     if compare_ras2 == 'high':
+    #         temp_val = cal_better_range(oldItem[attr2], currentItem[attr2])
+    #         if temp_val != 0:
+    #             compare2 += " ({0}%)".format(cal_better_range(oldItem[attr2], currentItem[attr2]))
+    #     explanation = "Compared with the previous phone, this phone has <b>{0}</b> {1} <b>{2}</b>.".format(compare1,
+    #                                                                                                        and_but,
+    #                                                                                                        compare2)
     # Social explanations (third-party opinions)
     if explanation_type == 2:
         compare1, compare_ras1 = getValueRange(topkey1, oldItem[attr1], currentItem[attr1])
@@ -1078,7 +1270,11 @@ def geneExpForNextItem(user_preference_model, explanation_type, currentItem, old
             compare1,
             and_but,
             compare2)
-    if explanation_type == 0:
+    if explanation_type == 1:
         msgs = ['I find this phone for you.', 'You may like this phone.', 'Please check this phone.']
+        explanation = random.choice(msgs)
+
+    if explanation_type == 0:
+        msgs = ['I find these phones for you.', 'You may like these phones.', 'Please check these phones.']
         explanation = random.choice(msgs)
     return explanation

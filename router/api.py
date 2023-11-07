@@ -148,6 +148,7 @@ def first_select(page: FinalChoice, db: Session = Depends(get_db)):
 @api.post("/checkid")
 def checkid(page: RandomID, db: Session = Depends(get_db)):
     user = db.query(ph_records).filter(ph_records.prolific_id == page.randomID).first()
+    print(page.randomID, user)
     if user:
         return {'status': 1, 'msg': 'success', 'id': user.id, 'uuid': user.uuid, 'identity_cue': user.identity_cue,
                 'explanation_style': user.explanation_style}
